@@ -5,7 +5,7 @@ config :media_server, MediaServer.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
-  database: "media_server_dev",
+  database: "media_server",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -64,3 +64,9 @@ config :phoenix, :plug_init_mode, :runtime
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+config :media_server,
+  tag: "city",
+  sync_with_parents: []
+
+config :pioneer_rpc, connection_string: "amqp://guest:guest@localhost:5672"
