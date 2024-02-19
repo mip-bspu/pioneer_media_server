@@ -26,3 +26,5 @@ erl_crash.dump
 media_server-*.tar
 
 /.elixir_ls
+
+/files

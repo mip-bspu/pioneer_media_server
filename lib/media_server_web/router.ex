@@ -7,6 +7,8 @@ defmodule MediaServerWeb.Router do
 
   scope "/api", MediaServerWeb do
     pipe_through :api
+
+    post("/content", ContentController, :create)
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
