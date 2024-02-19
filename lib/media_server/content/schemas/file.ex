@@ -17,7 +17,7 @@ defmodule MediaServer.Content.File do
 
   def changeset(item, params \\ %{}) do
     item
-    |> cast(params, [:extention, :name])
+    |> cast(params, [:extention, :name, :check_sum, :date_create, :uuid])
     |> validate_required([:uuid, :date_create, :name])
   end
 end
