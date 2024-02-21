@@ -67,6 +67,7 @@ config :swoosh, :api_client, false
 
 config :media_server,
   tag: "city",
-  sync_with_parents: []
+  sync_with_parents: ["city"],
+  dist_content: "./files/"
 
 config :pioneer_rpc, connection_string: "amqp://guest:guest@localhost:5672"

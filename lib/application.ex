@@ -18,9 +18,9 @@ defmodule MediaServer.Application do
       # {MediaServer.Worker, arg},
       # Start to serve requests, typically the last entry
       MediaServerWeb.Endpoint,
-
-      MediaServerWeb.Rpc.RemoteServer,
-      MediaServerWeb.Rpc.ParentClient
+      MediaServerWeb.Rpc.RpcClient,
+      MediaServerWeb.AMQP.FilesSyncService,
+      MediaServerWeb.AMQP.FilesSyncListener
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

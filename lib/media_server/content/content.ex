@@ -1,31 +1,55 @@
 defmodule MediaServer.Content do
-
   alias MediaServer.Repo
   alias MediaServer.Content
   alias MediaServer.Util.TimeUtil
+  alias MediaServer.Util.QueryUtil
 
+  @dist_files Application.compile_env(:media_server, :dist_content, "./files/")
 
-  @dist_files "./files/"
+  @hash_rows_query """
+    select date_create, uuid, md5(concat(
+      name,
+      uuid, extention, check_sum,
+      to_char(date_create, 'YYYY-MM-DD HH24:MI:SS')
+    )) as msum from files
+  """
+
+  @hash_months_query """
+    with check_sum as (
+      #{@hash_rows_query} order by date_create
+    ) select to_char(date_create, 'YYYY-MM') as label, md5(string_agg(msum, '')) from check_sum group by label;
+  """
+
+  @hash_days_of_month_query """
+
+  """
+
+  def months_state() do
+    QueryUtil.query_select(@hash_months_query, [])
+  end
 
   def file_path(filename), do: @dist_files <> filename
   def file_path(name, ext), do: @dist_files <> name <> ext
 
   def add_file!(name, %Plug.Upload{} = upload) do
-    Repo.transaction(fn->
+    Repo.transaction(fn ->
       extention = Path.extname(upload.filename)
 
-      file = %Content.File{}
-      |> Content.File.changeset(%{
-        uuid: Ecto.UUID.generate(),
-        date_create: TimeUtil.current_date_time(),
-        extention: extention,
-        name: name
-      }) |> Repo.insert!()
+      file =
+        %Content.File{}
+        |> Content.File.changeset(%{
+          uuid: Ecto.UUID.generate(),
+          date_create: TimeUtil.current_date_time(),
+          extention: extention,
+          name: name
+        })
+        |> Repo.insert!()
 
       file
       |> Content.File.changeset(%{
         check_sum: upload!(upload.path, file_path(file.uuid, file.extention))
-      }) |> Repo.update!()
+      })
+      |> Repo.update!()
     end)
   end
 
@@ -35,11 +59,12 @@ defmodule MediaServer.Content do
         init_hash = :crypto.hash_init(:sha256)
 
         File.stream!(dist_path, 2024)
-        |> Enum.reduce(init_hash, fn(chunk, acc)->
+        |> Enum.reduce(init_hash, fn chunk, acc ->
           :crypto.hash_update(acc, chunk)
         end)
         |> :crypto.hash_final()
         |> Base.encode16(case: :lower)
+
       e ->
         raise(InternalServerError, "Не удалось загрузить файл, ошибка: #{inspect(e)}")
     end
