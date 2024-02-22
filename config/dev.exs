@@ -19,7 +19,7 @@ config :media_server, MediaServer.Repo,
 config :media_server, MediaServerWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}, port: 4000],
+  http: [ip: {127, 0, 0, 1}, port: 3333],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
@@ -67,7 +67,7 @@ config :swoosh, :api_client, false
 
 config :media_server,
   tag: "city",
-  sync_with_parents: ["city"],
+  sync_with_parents: [],
   dist_content: "./files/"
 
 config :pioneer_rpc, connection_string: "amqp://guest:guest@localhost:5672"

@@ -118,8 +118,8 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
 
   defp deserialize(sdata), do: Poison.decode(sdata, keys: :atoms)
 
-  def months_state() do
-    Content.months_state()
+  def months_state(tags \\ []) do
+    {:ok, rows} = Content.months_state(tags)
   end
 
   def sync_get_file(res) do

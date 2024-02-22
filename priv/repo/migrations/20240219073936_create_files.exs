@@ -9,5 +9,14 @@ defmodule MediaServer.Repo.Migrations.CreateFiles do
       add(:extention, :string)
       add(:name, :string)
     end
+
+    create table("tags") do
+      add(:name, :string)
+    end
+
+    create table("file_tags") do
+      add(:file_id, references(:files))
+      add(:tag_id, references(:tags))
+    end
   end
 end

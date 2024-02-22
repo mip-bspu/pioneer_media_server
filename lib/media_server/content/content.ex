@@ -24,16 +24,24 @@ defmodule MediaServer.Content do
 
   """
 
-  def months_state() do
+  def months_state(tags) do
     QueryUtil.query_select(@hash_months_query, [])
   end
 
   def file_path(filename), do: @dist_files <> filename
   def file_path(name, ext), do: @dist_files <> name <> ext
 
-  def add_file!(name, %Plug.Upload{} = upload) do
+  def add_file!(name, %Plug.Upload{} = upload, tags) do
     Repo.transaction(fn ->
       extention = Path.extname(upload.filename)
+
+      {_, map_tags} = Enum.reduce(tags, {0, %{}}, fn(tag, {index, map})->
+        {
+          index + 1,
+          Map.put(map, index, %{name: tag})
+        }
+      end)
+
 
       file =
         %Content.File{}
@@ -41,7 +49,8 @@ defmodule MediaServer.Content do
           uuid: Ecto.UUID.generate(),
           date_create: TimeUtil.current_date_time(),
           extention: extention,
-          name: name
+          name: name,
+          tags: map_tags
         })
         |> Repo.insert!()
 

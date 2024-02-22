@@ -3,10 +3,13 @@ defmodule MediaServerWeb.ContentController do
 
   alias MediaServer.Content
 
-  def create(conn, %{"name"=>name, "file"=>%Plug.Upload{} = upload}) do
+  def create(conn, %{"name"=>name,"tags"=>tags, "file"=>%Plug.Upload{} = upload}) do
     IO.puts("create")
 
+    tags = String.split(tags, [", ", ","], trim: true)
     Content.add_file!(name, upload)
+
+    Content.add_file!(name, upload, tags)
 
 
     conn
