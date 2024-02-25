@@ -9,6 +9,11 @@ defmodule MediaServerWeb.AMQP.PingService do
 
   @interval_ping 2000
 
+
+  def get_ping(tag) do
+    GenServer.call(@name, {:get_ping, tag})
+  end
+
   def start_link(_state), do: GenServer.start_link(@name, %{}, name: @name)
 
   def init(state) do
@@ -20,6 +25,10 @@ defmodule MediaServerWeb.AMQP.PingService do
 
     Process.send_after(@name, :ping, @interval_ping)
     {:ok, new_state}
+  end
+
+  def handle_call({:get_ping, tag}, _from, state) do
+     {:reply, state[tag], state}
   end
 
   def handle_info(:ping, state) do

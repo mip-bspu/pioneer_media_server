@@ -8,7 +8,7 @@ defmodule MediaServerWeb.AMQP.PingListener do
   @name __MODULE__
   @reconnect_interval 10000
 
-  @connection_string Application.get_env(:pioneer_rpc, :connection_string)
+  @connection_string Application.compile_env(:pioneer_rpc, :connection_string)
 
   @queues Enum.map(
             ["ping"],

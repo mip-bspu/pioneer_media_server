@@ -19,12 +19,22 @@ defmodule MediaServer.Application do
       # Start to serve requests, typically the last entry
       MediaServerWeb.Endpoint,
       MediaServerWeb.Rpc.RpcClient,
-      MediaServerWeb.AMQP.FilesSyncService,
-      MediaServerWeb.AMQP.FilesSyncListener
+      MediaServerWeb.Rpc.RpcServer,
+      MediaServerWeb.AMQP.PingListener,
+      MediaServerWeb.AMQP.FilesSyncListener,
     ]
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
+    children =
+      if Application.get_env(:media_server, :parents) != [] do
+        children ++ [
+          MediaServerWeb.AMQP.PingService,
+          MediaServerWeb.AMQP.InitService,
+          MediaServerWeb.AMQP.FilesSyncService
+        ]
+      else
+        children
+      end
+
     opts = [strategy: :one_for_one, name: MediaServer.Supervisor]
     Supervisor.start_link(children, opts)
   end
