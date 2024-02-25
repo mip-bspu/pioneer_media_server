@@ -7,6 +7,7 @@ defmodule MediaServer.Content do
   alias MediaServer.Util.QueryUtil
 
   @dist_files Application.compile_env(:media_server, :dist_content, "./files/")
+  @chunk_size 2000
 
   @filtered_tags """
     with details_file_tags as (
@@ -66,7 +67,7 @@ defmodule MediaServer.Content do
   @query_hash_rows_of_day """
     with check_sum as (
       #{@query_hash_rows} order by date_create
-    ) select to_char(date_create, 'DD-MM-YYYY') as label, msum from check_sum
+    ) select uuid as label, msum from check_sum
     where cast(date_create as date) = $2
   """
 
@@ -74,8 +75,32 @@ defmodule MediaServer.Content do
     QueryUtil.query_select(@query_hash_rows_of_day, [Enum.join(tags, ", "), TimeUtil.parse_date(date, "{0D}-{0M}-{YYYY}")])
   end
 
+  def get_by_uuid!(uuid) do
+    Repo.get_by!(Content.File, uuid: uuid)
+    |> Repo.preload(:tags)
+  end
+
+  def get_by_uuid(uuid) do
+    Repo.get_by(Content.File, uuid: uuid)
+    |> Repo.preload(:tags)
+  end
+
+  def parse_content(%Content.File{} = file) do
+    %{
+      name: file.name,
+      check_sum: file.check_sum || "",
+      uuid: file.uuid,
+      date_create: file.date_create,
+      tags: Enum.map(file.tags, fn(tag)->tag.name end)
+    }
+  end
+
+  def file_path(%Content.File = file), do: @dist_files <> file.uuid <> file.extention
+
   def file_path(filename), do: @dist_files <> filename
-  def file_path(name, ext), do: @dist_files <> name <> ext
+  def file_path(uuid, ext), do: @dist_files <> uuid <> ext
+
+
 
   def add_file!(name, %Plug.Upload{} = upload, tags) do
     Repo.transaction(fn ->
@@ -105,6 +130,24 @@ defmodule MediaServer.Content do
       })
       |> Repo.update!()
     end)
+  end
+
+  def load_file(uuid, send_func) do
+    content = Content.get_by_uuid!(uuid)
+
+    content
+    |> Content.file_path()
+    |> File.stream!(@chunk_size)
+    |> get_chunk(content)
+    |> send_func.()
+  end
+
+  def get_chunk(data, content) do
+    %{
+      uuid: content.uuid,
+      ext: content.extention,
+      chunk_data: data
+    }
   end
 
   def upload!(src_path, dist_path) do

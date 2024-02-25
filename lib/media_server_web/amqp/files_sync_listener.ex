@@ -12,11 +12,11 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
 
   @queues Enum.map(
             [
-              "sync_get_file",
-              "sync_get",
               "months_state",
               "days_of_month_state",
-              "rows_of_day_state"
+              "rows_of_day_state",
+              "get_by_uuid",
+              "load_file"
             ],
             &"#{Application.compile_env(:media_server, :tag)}.#{&1}"
           )
@@ -135,10 +135,18 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
     rows
   end
 
-  def sync_get_file(res) do
+  def get_by_uuid(uuid) do
+    try do
+      Content.get_by_uuid!(uuid) # TODO: exception
+      |> Content.parse_content()
+    rescue
+      e ->
+        Logger.error("Bad request by uuid: #{inspect(uuid)}, error: #{inspect(e)}")
+    end
   end
 
-  def sync_get(payload) do
-    IO.puts(payload)
+  def load_file(uuid) do
+
+
   end
 end

@@ -33,4 +33,12 @@ defmodule MediaServerWeb.Rpc.RpcClient do
   def rows_of_day_state(tag, request_tags, date) do
     rpc({"#{tag}.rows_of_day_state", [request_tags, date]})
   end
+
+  def get_by_uuid(tag, uuid) do
+    rpc({"#{tag}.get_by_uuid", [uuid]})
+  end
+
+  def load_file(tag, uuid) do
+    rpc({"#{tag}.load_file", [uuid]})
+  end
 end

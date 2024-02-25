@@ -81,8 +81,24 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
     {:noreply, state}
   end
 
-  def handle_info({:check_rows, diff, tag}, state) do
+  def handle_info({:check_rows, rows, tag}, state) do
     IO.puts("yes check_rows")
+
+    rows
+    |> Enum.each(fn(row)->
+      spawn(fn->
+        {:ok, remote_file} = RpcClient.get_by_uuid(tag, row[:label])
+
+        case Content.get_by_uuid(row[:label]) do
+          nil->
+            IO.inspect("empty")
+
+
+          file->
+            IO.inspect(file)
+        end
+      end)
+    end)
 
     {:noreply, state}
   end
