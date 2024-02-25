@@ -14,7 +14,9 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
             [
               "sync_get_file",
               "sync_get",
-              "months_state"
+              "months_state",
+              "days_of_month_state",
+              "rows_of_day_state"
             ],
             &"#{Application.compile_env(:media_server, :tag)}.#{&1}"
           )
@@ -120,6 +122,16 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
 
   def months_state(tags \\ []) do
     {:ok, rows} = Content.months_state(tags)
+    rows
+  end
+
+  def days_of_month_state(tags, date) do
+    {:ok, rows} = Content.days_of_month_state(tags, date)
+    rows
+  end
+
+  def rows_of_day_state(tags, date) do
+    {:ok, rows} = Content.rows_of_day_state(tags, date)
     rows
   end
 

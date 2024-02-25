@@ -27,7 +27,7 @@ defmodule MediaServer.Content do
     select * from filtered_tags
   """
 
-  def get_by_tags(tags) do
+  def get_by_tags(tags) do # check: sql injection
     QueryUtil.query_select(@query_get_by_tags, [Enum.join(tags, ", ")])
   end
 
@@ -43,7 +43,7 @@ defmodule MediaServer.Content do
   @query_hash_months """
     with check_sum as (
       #{@query_hash_rows} order by date_create
-    ) select to_char(date_create, 'YYYY-MM') as label, md5(string_agg(msum, '')) from check_sum group by label;
+    ) select to_char(date_create, 'MM-YYYY') as label, md5(string_agg(msum, '')) from check_sum group by label
   """
 
   def months_state(tags) do
@@ -51,9 +51,28 @@ defmodule MediaServer.Content do
     QueryUtil.query_select(@query_hash_months, [Enum.join(tags, ", ")])
   end
 
-  @hash_days_of_month_query """
-
+  @query_hash_days_of_month """
+    with check_sum as (
+      #{@query_hash_rows} order by date_create
+    ) select to_char(date_create, 'DD-MM-YYYY') as label, md5(string_agg(msum, '')) from check_sum
+    where cast(date_create as date) between $2 and $3 group by label
   """
+
+  def days_of_month_state(tags, date) do
+    {begin_month, end_month} = TimeUtil.month_period(TimeUtil.parse_date(date, "{0M}-{YYYY}"))
+    QueryUtil.query_select(@query_hash_days_of_month, [Enum.join(tags, ", "), begin_month, end_month])
+  end
+
+  @query_hash_rows_of_day """
+    with check_sum as (
+      #{@query_hash_rows} order by date_create
+    ) select to_char(date_create, 'DD-MM-YYYY') as label, msum from check_sum
+    where cast(date_create as date) = $2
+  """
+
+  def rows_of_day_state(tags, date) do
+    QueryUtil.query_select(@query_hash_rows_of_day, [Enum.join(tags, ", "), TimeUtil.parse_date(date, "{0D}-{0M}-{YYYY}")])
+  end
 
   def file_path(filename), do: @dist_files <> filename
   def file_path(name, ext), do: @dist_files <> name <> ext

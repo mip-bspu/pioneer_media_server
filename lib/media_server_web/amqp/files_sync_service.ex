@@ -27,13 +27,62 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
     @parents
     |> Enum.each(fn tag ->
       spawn(fn ->
-        {:ok, remote_state} = RpcClient.months_state(tag, [@my_tag])
-        {:ok, local_state} = Content.months_state([])
+        {:ok, remote_state} = RpcClient.months_state(tag, [@my_tag]) # TODO: tags children
+        {:ok, local_state} = Content.months_state([@my_tag]) # TODO: exception
 
-        IO.inspect(remote_state)
-        IO.inspect(local_state)
+        diff = remote_state -- local_state
+        Logger.debug("#{@name}: Discovered difference months: #{inspect(diff)}")
+
+        if diff != [] do
+          send(@name, {:check_months, diff, tag})
+        end
       end)
     end)
+
+    {:noreply, state}
+  end
+
+  def handle_info({:check_months, months, tag}, state) do
+    IO.puts("yes check months")
+    months
+    |> Enum.each(fn(month)->
+      spawn(fn->
+        {:ok, remote_state} = RpcClient.days_of_month_state(tag, [@my_tag], month[:label])
+        {:ok, local_state} = Content.days_of_month_state([@my_tag], month[:label])
+
+        diff = remote_state -- local_state
+        Logger.debug("#{@name}: Discovered difference days of month: #{inspect(diff)}")
+
+        if diff != [] do
+          send(@name, {:check_days, diff, tag})
+        end
+      end)
+    end)
+
+    {:noreply, state}
+  end
+
+  def handle_info({:check_days, days, tag}, state) do
+    days
+    |> Enum.each(fn(day)->
+      spawn(fn->
+        {:ok, remote_state} = RpcClient.rows_of_day_state(tag, [@my_tag], day[:label])
+        {:ok, local_state} = Content.rows_of_day_state([@my_tag], day[:label])
+
+        diff = remote_state -- local_state
+        Logger.debug("#{@name}: Discovered difference rows of day: #{inspect(diff)}")
+
+        if diff != [] do
+          send(@name, {:check_rows, diff, tag})
+        end
+      end)
+    end)
+
+    {:noreply, state}
+  end
+
+  def handle_info({:check_rows, diff, tag}, state) do
+    IO.puts("yes check_rows")
 
     {:noreply, state}
   end

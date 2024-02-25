@@ -22,7 +22,15 @@ defmodule MediaServerWeb.Rpc.RpcClient do
     end
   end
 
-  def months_state(tag, req_tags \\ []) do
-    rpc({"#{tag}.months_state", [req_tags]})
+  def months_state(tag, request_tags \\ []) do
+    rpc({"#{tag}.months_state", [request_tags]})
+  end
+
+  def days_of_month_state(tag, request_tags, date) do
+    rpc({"#{tag}.days_of_month_state", [request_tags, date]})
+  end
+
+  def rows_of_day_state(tag, request_tags, date) do
+    rpc({"#{tag}.rows_of_day_state", [request_tags, date]})
   end
 end

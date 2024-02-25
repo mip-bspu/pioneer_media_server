@@ -12,11 +12,12 @@
 
 alias MediaServer.Repo
 alias MediaServer.Content
+alias MediaServer.NodeServer
 alias MediaServer.Util.TimeUtil
 
 if Mix.env() == :dev do
 
-  if Application.get_env(:media_server, :parent) == [] && Repo.all(Content.File) == [] do
+  if Application.get_env(:media_server, :parents) == [] && Repo.all(Content.File) == [] do
     date = TimeUtil.current_date_time()
 
     %Content.File{}
@@ -71,13 +72,47 @@ if Mix.env() == :dev do
     %Content.File{}
     |> Content.File.changeset(%{
       uuid: Ecto.UUID.generate(),
-      date_create: Timex.shift(date, months: -2),
+      date_create: Timex.shift(date, months: -1, days: 3),
       extention: ".pdf",
       name: "content 5",
       tags: %{
         0 => %{name: "school"},
       }
     })
+    |> Repo.insert!()
+
+    %Content.File{}
+    |> Content.File.changeset(%{
+      uuid: Ecto.UUID.generate(),
+      date_create: Timex.shift(date, months: -1, days: 3, minutes: 1),
+      extention: ".pdf",
+      name: "content 6",
+      tags: %{
+        0 => %{name: "school"},
+      }
+    })
+    |> Repo.insert!()
+
+    %Content.File{}
+    |> Content.File.changeset(%{
+      uuid: Ecto.UUID.generate(),
+      date_create: Timex.shift(date, months: -2),
+      extention: ".pdf",
+      name: "content 7",
+      tags: %{
+        0 => %{name: "school"},
+      }
+    })
+    |> Repo.insert!()
+  end
+
+  if Application.get_env(:media_server, :parents) != [] do
+    %NodeServer.Node{}
+    |> NodeServer.Node.changeset(%{name: "section1"})
+    |> Repo.insert!()
+
+    %NodeServer.Node{}
+    |> NodeServer.Node.changeset(%{name: "section2"})
     |> Repo.insert!()
   end
 end
