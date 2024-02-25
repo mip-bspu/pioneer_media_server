@@ -9,7 +9,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
   @name __MODULE__
   @check_interval 1000
 
-  @parents Application.compile_env(:media_server, :sync_with_parents)
+  @parents Application.compile_env(:media_server, :parents)
   @my_tag Application.compile_env(:media_server, :tag)
 
   def start_link(_state \\ []) do
@@ -27,11 +27,11 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
     @parents
     |> Enum.each(fn tag ->
       spawn(fn ->
-        res = RpcClient.months_state(tag, [@my_tag])
+        {:ok, remote_state} = RpcClient.months_state(tag, [@my_tag])
+        {:ok, local_state} = Content.months_state([])
 
-        resp = Content.months_state([])
-
-      IO.inspect(res)
+        IO.inspect(remote_state)
+        IO.inspect(local_state)
       end)
     end)
 

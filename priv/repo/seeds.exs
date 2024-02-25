@@ -16,7 +16,7 @@ alias MediaServer.Util.TimeUtil
 
 if Mix.env() == :dev do
 
-  if Repo.all(Content.File) == [] do
+  if Application.get_env(:media_server, :parent) == [] && Repo.all(Content.File) == [] do
     date = TimeUtil.current_date_time()
 
     %Content.File{}

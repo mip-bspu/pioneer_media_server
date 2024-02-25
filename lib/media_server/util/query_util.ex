@@ -1,11 +1,12 @@
 defmodule MediaServer.Util.QueryUtil do
+  require Logger
+
   alias MediaServer.Repo
 
   def query_select(query, params) do
     case Ecto.Adapters.SQL.query(Repo, query, params) do
       {:ok, %Postgrex.Result{command: :select, columns: cols, rows: rows}} ->
-        decode_table(cols, rows)
-
+        {:ok, decode_table(cols, rows)}
       error ->
         Logger.error("Error execute query: #{inspect(error)}")
         {:bad_request, "Ошибка выполнения запроса"}

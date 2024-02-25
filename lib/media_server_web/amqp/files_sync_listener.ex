@@ -8,7 +8,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   @name __MODULE__
   @reconnect_interval 10000
 
-  @connection_string Application.get_env(:pioneer_rpc, :connection_string)
+  @connection_string Application.compile_env(:pioneer_rpc, :connection_string)
 
   @queues Enum.map(
             [
@@ -120,6 +120,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
 
   def months_state(tags \\ []) do
     {:ok, rows} = Content.months_state(tags)
+    rows
   end
 
   def sync_get_file(res) do

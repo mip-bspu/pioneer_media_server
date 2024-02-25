@@ -1,4 +1,6 @@
 defmodule MediaServer.Content do
+  require Logger
+
   alias MediaServer.Repo
   alias MediaServer.Content
   alias MediaServer.Util.TimeUtil
@@ -6,27 +8,52 @@ defmodule MediaServer.Content do
 
   @dist_files Application.compile_env(:media_server, :dist_content, "./files/")
 
-  @hash_rows_query """
-    select date_create, uuid, md5(concat(
-      name,
-      uuid, extention, check_sum,
-      to_char(date_create, 'YYYY-MM-DD HH24:MI:SS')
-    )) as msum from files
+  @filtered_tags """
+    with details_file_tags as (
+      select uuid, date_create, check_sum, extention, f.name, t.name as tag from files f
+        join file_tags ft on f.id = ft.file_id
+        join tags t on t.id = ft.tag_id
+      order by t.name, date_create
+    ), array_tags as (
+      select uuid, date_create, check_sum, extention, name, array_agg(tag) as tags from details_file_tags ft
+      group by uuid, date_create, check_sum, extention, name
+    ), filtered_tags as (
+      select * from array_tags where ARRAY[$1] && tags::text[]
+    )
   """
 
-  @hash_months_query """
+  @query_get_by_tags """
+    #{@filtered_tags}
+    select * from filtered_tags
+  """
+
+  def get_by_tags(tags) do
+    QueryUtil.query_select(@query_get_by_tags, [Enum.join(tags, ", ")])
+  end
+
+  @query_hash_rows """
+    #{@filtered_tags}
+    select date_create, uuid, md5(concat(
+      name, tags,
+      uuid, extention, check_sum,
+      to_char(date_create, 'YYYY-MM-DD HH24:MI:SS')
+    )) as msum from filtered_tags
+  """
+
+  @query_hash_months """
     with check_sum as (
-      #{@hash_rows_query} order by date_create
+      #{@query_hash_rows} order by date_create
     ) select to_char(date_create, 'YYYY-MM') as label, md5(string_agg(msum, '')) from check_sum group by label;
   """
+
+  def months_state(tags) do
+    IO.inspect(tags)
+    QueryUtil.query_select(@query_hash_months, [Enum.join(tags, ", ")])
+  end
 
   @hash_days_of_month_query """
 
   """
-
-  def months_state(tags) do
-    QueryUtil.query_select(@hash_months_query, [])
-  end
 
   def file_path(filename), do: @dist_files <> filename
   def file_path(name, ext), do: @dist_files <> name <> ext
@@ -41,7 +68,6 @@ defmodule MediaServer.Content do
           Map.put(map, index, %{name: tag})
         }
       end)
-
 
       file =
         %Content.File{}
