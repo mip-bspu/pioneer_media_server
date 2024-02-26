@@ -133,20 +133,46 @@ defmodule MediaServer.Content do
 
   def load_file(uuid, send_func) do
     content = Content.get_by_uuid!(uuid)
+    path = Content.file_path(content)
 
-    content
-    |> Content.file_path()
-    |> File.stream!(@chunk_size)
-    |> get_chunk(content)
-    |> send_func.()
+    if File.exists?(path) do
+      path
+      |> File.stream!(@chunk_size)
+      |> Enum.reduce(0, fn(data, acc)->
+        data
+        |> Base.encode64()
+        |> create_chunk(content, acc)
+        |> send_func.()
+
+        acc+1
+      end)
+    end
   end
 
-  def get_chunk(data, content) do
+  def create_chunk(data, content, index) do
     %{
+      index: index,
       uuid: content.uuid,
       ext: content.extention,
       chunk_data: data
     }
+  end
+
+  def upload_file(chunk) do # TODO: exception
+    case chunk do
+      %{
+        index: index,
+        uuid: uuid,
+        chunk_data: data,
+        ext: ext
+      }->
+        if index == 0 && File.exists?(file_path(uuid, ext)) do
+          File.rm!(file_path(uuid, ext))
+        end
+
+        File.write(file_path(uuid, ext), data |> Base.decode64!(), [:append])
+      _->:error
+    end
   end
 
   def upload!(src_path, dist_path) do

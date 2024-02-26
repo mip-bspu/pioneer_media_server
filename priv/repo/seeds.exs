@@ -22,7 +22,7 @@ if Mix.env() == :dev do
 
     %Content.File{}
     |> Content.File.changeset(%{
-      uuid: Ecto.UUID.generate(),
+      uuid: "abcd",
       date_create: date,
       extention: ".pdf",
       name: "content 1",

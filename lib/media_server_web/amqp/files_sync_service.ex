@@ -12,6 +12,8 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
   @parents Application.compile_env(:media_server, :parents)
   @my_tag Application.compile_env(:media_server, :tag)
 
+  @request_tags [@my_tag]++@parents
+
   def start_link(_state \\ []) do
     GenServer.start_link(@name, [], name: @name)
   end
@@ -27,8 +29,8 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
     @parents
     |> Enum.each(fn tag ->
       spawn(fn ->
-        {:ok, remote_state} = RpcClient.months_state(tag, [@my_tag]) # TODO: tags children
-        {:ok, local_state} = Content.months_state([@my_tag]) # TODO: exception
+        {:ok, remote_state} = RpcClient.months_state(tag, @request_tags) # TODO: tags children
+        {:ok, local_state} = Content.months_state(@request_tags) # TODO: exception
 
         diff = remote_state -- local_state
         Logger.debug("#{@name}: Discovered difference months: #{inspect(diff)}")
@@ -47,8 +49,8 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
     months
     |> Enum.each(fn(month)->
       spawn(fn->
-        {:ok, remote_state} = RpcClient.days_of_month_state(tag, [@my_tag], month[:label])
-        {:ok, local_state} = Content.days_of_month_state([@my_tag], month[:label])
+        {:ok, remote_state} = RpcClient.days_of_month_state(tag, @request_tags, month[:label])
+        {:ok, local_state} = Content.days_of_month_state(@request_tags, month[:label])
 
         diff = remote_state -- local_state
         Logger.debug("#{@name}: Discovered difference days of month: #{inspect(diff)}")
@@ -66,8 +68,8 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
     days
     |> Enum.each(fn(day)->
       spawn(fn->
-        {:ok, remote_state} = RpcClient.rows_of_day_state(tag, [@my_tag], day[:label])
-        {:ok, local_state} = Content.rows_of_day_state([@my_tag], day[:label])
+        {:ok, remote_state} = RpcClient.rows_of_day_state(tag, @request_tags, day[:label])
+        {:ok, local_state} = Content.rows_of_day_state(@request_tags, day[:label])
 
         diff = remote_state -- local_state
         Logger.debug("#{@name}: Discovered difference rows of day: #{inspect(diff)}")
@@ -91,8 +93,10 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
 
         case Content.get_by_uuid(row[:label]) do
           nil->
-            IO.inspect("empty")
+            IO.puts("empty")
+            IO.inspect(remote_file)
 
+            RpcClient.request_file_download(tag, @my_tag, remote_file[:uuid])
 
           file->
             IO.inspect(file)

@@ -4,6 +4,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   use AMQP
 
   alias MediaServer.Content
+  alias MediaServerWeb.Rpc.RpcClient
 
   @name __MODULE__
   @reconnect_interval 10000
@@ -16,7 +17,8 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
               "days_of_month_state",
               "rows_of_day_state",
               "get_by_uuid",
-              "load_file"
+              "request_file_download",
+              "load_chunk"
             ],
             &"#{Application.compile_env(:media_server, :tag)}.#{&1}"
           )
@@ -56,8 +58,6 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
 
   def handle_info({:basic_deliver, payload, meta}, chan) do
     # You might want to run payload consumption in separate Tasks in production
-
-    IO.inspect(meta)
     consume(chan, payload, meta)
     {:noreply, chan}
   end
@@ -145,8 +145,23 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
     end
   end
 
-  def load_file(uuid) do
+  def request_file_download(dist_tag, uuid) do
+    spawn(fn->
+      upload_chunk(dist_tag, uuid)
+    end)
 
+    :ok # TODO: if file exists
+  end
 
+  defp upload_chunk(tag, uuid) do
+    Content.load_file(uuid, fn(chunk)->
+      RpcClient.upload_chunk(tag, chunk)
+    end)
+  end
+
+  def load_chunk(chunk) do
+    IO.inspect(chunk)
+    Content.upload_file(chunk)
+    :ok
   end
 end
