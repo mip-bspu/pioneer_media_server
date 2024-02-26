@@ -19,7 +19,7 @@ defmodule MediaServer.Content do
       select uuid, date_create, check_sum, extention, name, array_agg(tag) as tags from details_file_tags ft
       group by uuid, date_create, check_sum, extention, name
     ), filtered_tags as (
-      select * from array_tags where ARRAY[$1] && tags::text[]
+      select * from array_tags where $1 && tags::text[]
     )
   """
 
@@ -29,7 +29,7 @@ defmodule MediaServer.Content do
   """
 
   def get_by_tags(tags) do # check: sql injection
-    QueryUtil.query_select(@query_get_by_tags, [Enum.join(tags, ", ")])
+    QueryUtil.query_select(@query_get_by_tags, [tags])
   end
 
   @query_hash_rows """
@@ -48,8 +48,7 @@ defmodule MediaServer.Content do
   """
 
   def months_state(tags) do
-    IO.inspect(tags)
-    QueryUtil.query_select(@query_hash_months, [Enum.join(tags, ", ")])
+    QueryUtil.query_select(@query_hash_months, [tags])
   end
 
   @query_hash_days_of_month """
@@ -61,7 +60,7 @@ defmodule MediaServer.Content do
 
   def days_of_month_state(tags, date) do
     {begin_month, end_month} = TimeUtil.month_period(TimeUtil.parse_date(date, "{0M}-{YYYY}"))
-    QueryUtil.query_select(@query_hash_days_of_month, [Enum.join(tags, ", "), begin_month, end_month])
+    QueryUtil.query_select(@query_hash_days_of_month, [tags, begin_month, end_month])
   end
 
   @query_hash_rows_of_day """
@@ -72,7 +71,7 @@ defmodule MediaServer.Content do
   """
 
   def rows_of_day_state(tags, date) do
-    QueryUtil.query_select(@query_hash_rows_of_day, [Enum.join(tags, ", "), TimeUtil.parse_date(date, "{0D}-{0M}-{YYYY}")])
+    QueryUtil.query_select(@query_hash_rows_of_day, [tags, TimeUtil.parse_date(date, "{0D}-{0M}-{YYYY}")])
   end
 
   def get_by_uuid!(uuid) do
@@ -95,7 +94,7 @@ defmodule MediaServer.Content do
     }
   end
 
-  def file_path(%Content.File = file), do: @dist_files <> file.uuid <> file.extention
+  def file_path(%Content.File{} = file), do: @dist_files <> file.uuid <> file.extention
 
   def file_path(filename), do: @dist_files <> filename
   def file_path(uuid, ext), do: @dist_files <> uuid <> ext
