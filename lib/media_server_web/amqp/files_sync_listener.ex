@@ -137,7 +137,8 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
 
   def get_by_uuid(uuid) do
     try do
-      Content.get_by_uuid!(uuid) # TODO: exception
+      # TODO: exception
+      Content.get_by_uuid!(uuid)
       |> Content.parse_content()
     rescue
       e ->
@@ -146,15 +147,16 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   end
 
   def request_file_download(dist_tag, uuid) do
-    spawn(fn->
+    spawn(fn ->
       upload_chunk(dist_tag, uuid)
     end)
 
-    :ok # TODO: if file exists
+    # TODO: if file exists
+    :ok
   end
 
   defp upload_chunk(tag, uuid) do
-    Content.load_file(uuid, fn(chunk)->
+    Content.load_file(uuid, fn chunk ->
       RpcClient.upload_chunk(tag, chunk)
     end)
   end

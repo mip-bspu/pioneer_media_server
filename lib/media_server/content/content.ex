@@ -28,7 +28,8 @@ defmodule MediaServer.Content do
     select * from filtered_tags
   """
 
-  def get_by_tags(tags) do # check: sql injection
+  # check: sql injection
+  def get_by_tags(tags) do
     QueryUtil.query_select(@query_get_by_tags, [tags])
   end
 
@@ -71,7 +72,10 @@ defmodule MediaServer.Content do
   """
 
   def rows_of_day_state(tags, date) do
-    QueryUtil.query_select(@query_hash_rows_of_day, [tags, TimeUtil.parse_date(date, "{0D}-{0M}-{YYYY}")])
+    QueryUtil.query_select(@query_hash_rows_of_day, [
+      tags,
+      TimeUtil.parse_date(date, "{0D}-{0M}-{YYYY}")
+    ])
   end
 
   def get_by_uuid!(uuid) do
@@ -87,10 +91,11 @@ defmodule MediaServer.Content do
   def parse_content(%Content.File{} = file) do
     %{
       name: file.name,
-      check_sum: file.check_sum || "",
+      check_sum: file.check_sum || nil,
+      extention: file.extention,
       uuid: file.uuid,
       date_create: file.date_create,
-      tags: Enum.map(file.tags, fn(tag)->tag.name end)
+      tags: Enum.map(file.tags, fn tag -> tag.name end)
     }
   end
 
@@ -99,29 +104,47 @@ defmodule MediaServer.Content do
   def file_path(filename), do: @dist_files <> filename
   def file_path(uuid, ext), do: @dist_files <> uuid <> ext
 
-
-
-  def add_file!(name, %Plug.Upload{} = upload, tags) do
-    Repo.transaction(fn ->
-      extention = Path.extname(upload.filename)
-
-      {_, map_tags} = Enum.reduce(tags, {0, %{}}, fn(tag, {index, map})->
+  def tags_to_map_tags(list_tags) do
+    {_, map_tags} =
+      Enum.reduce(list_tags, {0, %{}}, fn tag, {index, map} ->
         {
           index + 1,
           Map.put(map, index, %{name: tag})
         }
       end)
 
-      file =
-        %Content.File{}
-        |> Content.File.changeset(%{
-          uuid: Ecto.UUID.generate(),
-          date_create: TimeUtil.current_date_time(),
-          extention: extention,
-          name: name,
-          tags: map_tags
-        })
-        |> Repo.insert!()
+    map_tags
+  end
+
+  def add_file_data!(%{name: name, extention: extention, tags: list_tags} = data) do
+    %Content.File{}
+    |> Content.File.changeset(%{
+      uuid: data[:uuid] || Ecto.UUID.generate(),
+      date_create: data[:date_create] || TimeUtil.current_date_time(),
+      check_sum: data[:check_sum] || nil,
+      extention: extention,
+      name: name,
+      tags: tags_to_map_tags(list_tags)
+    })
+    |> Repo.insert!()
+  end
+
+  def update_file_data!(%Content.File{} = old_file, %{tags: tags} = map_new_file) do
+    IO.inspect(tags)
+
+    old_file
+    |> Content.File.changeset(%{
+      map_new_file
+      | tags: tags_to_map_tags(tags)
+    })
+    |> Repo.update!()
+  end
+
+  def add_file!(name, %Plug.Upload{} = upload, tags) do
+    Repo.transaction(fn ->
+      extention = Path.extname(upload.filename)
+
+      file = add_file_data!(%{name: name, extention: extention, tags: tags})
 
       file
       |> Content.File.changeset(%{
@@ -138,13 +161,13 @@ defmodule MediaServer.Content do
     if File.exists?(path) do
       path
       |> File.stream!(@chunk_size)
-      |> Enum.reduce(0, fn(data, acc)->
+      |> Enum.reduce(0, fn data, acc ->
         data
         |> Base.encode64()
         |> create_chunk(content, acc)
         |> send_func.()
 
-        acc+1
+        acc + 1
       end)
     end
   end
@@ -153,25 +176,28 @@ defmodule MediaServer.Content do
     %{
       index: index,
       uuid: content.uuid,
-      ext: content.extention,
+      extention: content.extention,
       chunk_data: data
     }
   end
 
-  def upload_file(chunk) do # TODO: exception
+  # TODO: exception
+  def upload_file(chunk) do
     case chunk do
       %{
         index: index,
         uuid: uuid,
         chunk_data: data,
-        ext: ext
-      }->
+        extention: ext
+      } ->
         if index == 0 && File.exists?(file_path(uuid, ext)) do
           File.rm!(file_path(uuid, ext))
         end
 
         File.write(file_path(uuid, ext), data |> Base.decode64!(), [:append])
-      _->:error
+
+      _ ->
+        :error
     end
   end
 

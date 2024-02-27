@@ -16,14 +16,13 @@ defmodule MediaServer.Content.File do
 
     field(:name, :string)
 
-    many_to_many :tags, Content.Tag,
-      join_through: Content.FileTag
+    many_to_many :tags, Content.Tag, join_through: Content.FileTag, on_replace: :delete
   end
 
   def changeset(item, params \\ %{}) do
     item
     |> cast(params, [:extention, :name, :check_sum, :date_create, :uuid])
-    |> cast_assoc(:tags,  required: true)
+    |> cast_assoc(:tags, required: true)
     |> validate_required([:uuid, :date_create, :name])
   end
 end

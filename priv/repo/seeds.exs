@@ -16,7 +16,6 @@ alias MediaServer.NodeServer
 alias MediaServer.Util.TimeUtil
 
 if Mix.env() == :dev do
-
   if Application.get_env(:media_server, :parents) == [] && Repo.all(Content.File) == [] do
     date = TimeUtil.current_date_time()
 
@@ -26,6 +25,7 @@ if Mix.env() == :dev do
       date_create: date,
       extention: ".pdf",
       name: "content 1",
+      check_sum: "aaaa",
       tags: %{
         0 => %{name: "city"}
       }
@@ -38,6 +38,7 @@ if Mix.env() == :dev do
       date_create: date,
       extention: ".pdf",
       name: "content 2",
+      check_sum: "abaa",
       tags: %{
         0 => %{name: "school"},
         1 => %{name: "city"}
@@ -51,8 +52,9 @@ if Mix.env() == :dev do
       date_create: date,
       extention: ".pdf",
       name: "content 3",
+      check_sum: "aaba",
       tags: %{
-        0 => %{name: "school"},
+        0 => %{name: "school"}
       }
     })
     |> Repo.insert!()
@@ -63,8 +65,9 @@ if Mix.env() == :dev do
       date_create: Timex.shift(date, months: -1),
       extention: ".pdf",
       name: "content 4",
+      check_sum: "aaab",
       tags: %{
-        0 => %{name: "school"},
+        0 => %{name: "school"}
       }
     })
     |> Repo.insert!()
@@ -75,8 +78,9 @@ if Mix.env() == :dev do
       date_create: Timex.shift(date, months: -1, days: 3),
       extention: ".pdf",
       name: "content 5",
+      check_sum: "bbaa",
       tags: %{
-        0 => %{name: "school"},
+        0 => %{name: "school"}
       }
     })
     |> Repo.insert!()
@@ -87,8 +91,9 @@ if Mix.env() == :dev do
       date_create: Timex.shift(date, months: -1, days: 3, minutes: 1),
       extention: ".pdf",
       name: "content 6",
+      check_sum: "baba",
       tags: %{
-        0 => %{name: "school"},
+        0 => %{name: "school"}
       }
     })
     |> Repo.insert!()
@@ -99,8 +104,9 @@ if Mix.env() == :dev do
       date_create: Timex.shift(date, months: -2),
       extention: ".pdf",
       name: "content 7",
+      check_sum: "baab",
       tags: %{
-        0 => %{name: "school"},
+        0 => %{name: "school"}
       }
     })
     |> Repo.insert!()
