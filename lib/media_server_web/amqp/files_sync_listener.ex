@@ -31,6 +31,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
     Logger.info("#{@name}: starting files sync listener")
 
     connect()
+    {:ok, :state}
   end
 
   # Confirmation sent by the broker after registering this process as a consumer
@@ -54,7 +55,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   end
 
   def handle_info({:DOWN, _, :process, _pid, _reason}, _state) do
-    {:noreply, connect()}
+    connect()
   end
 
   def handle_info(:try_to_connect, _state), do: connect()
@@ -63,13 +64,13 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
     case rabbitmq_connect() do
       {:ok, chan} ->
         Logger.debug("#{@name}: files sync listener connected to RabbitMQ")
-        {:ok, chan}
+        {:noreply, chan}
 
       {:error, _message} ->
         Logger.warning("#{@name}: failed to connect RabbitMQ during init. Scheduling reconnect.")
 
         Process.send_after(@name, :try_to_connect, @reconnect_interval)
-        {:ok, :not_connected}
+        {:noreply, :not_connected}
     end
   end
 

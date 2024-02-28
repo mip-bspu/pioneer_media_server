@@ -5,16 +5,16 @@ defmodule MediaServerWeb.Rpc.RpcClient do
   @parents Application.compile_env(:media_server, :parents)
 
   def init_in_parent(parent, tags) do
-    IO.puts(parent)
     rpc({parent, [tags]})
   end
 
   def ping_parent(tag, time) do
     try do
       case rpc({"#{tag}.ping", [time]}) do
-        {:ok, %{value: "ok", time: reply_time}}->
+        {:ok, %{value: "ok", time: reply_time}} ->
           {:ok, reply_time}
-        _->
+
+        _ ->
           :error
       end
     rescue

@@ -3,8 +3,6 @@ defmodule MediaServerWeb.AMQP.PingListener do
   use GenServer
   use AMQP
 
-  alias MediaServer.Content
-
   @name __MODULE__
   @reconnect_interval 10000
 
@@ -22,44 +20,67 @@ defmodule MediaServerWeb.AMQP.PingListener do
   def init(_opts) do
     Logger.info("#{@name}: starting ping listener")
 
-    case rabbitmq_connect() do
-      {:ok, chan} ->
-        Logger.debug("#{@name}: files sync listener connected to RabbitMQ")
-        {:ok, chan}
-
-      {:error, _message} ->
-        Logger.warning("#{@name}: failed to connect RabbitMQ during init. Scheduling reconnect.")
-        {:ok, :state}
-    end
+    connect()
+    {:ok, :state}
   end
 
   def handle_info({:basic_consume_ok, %{consumer_tag: _consumer_tag}}, chan), do: {:noreply, chan}
 
-  def handle_info({:basic_cancel, %{consumer_tag: _consumer_tag}}, chan), do: {:stop, :normal, chan}
+  def handle_info({:basic_cancel, %{consumer_tag: _consumer_tag}}, chan),
+    do: {:stop, :normal, chan}
 
   def handle_info({:basic_cancel_ok, %{consumer_tag: _consumer_tag}}, chan), do: {:noreply, chan}
 
   def handle_info({:basic_deliver, payload, meta}, chan) do
-    consume(chan, payload, meta)
+    spawn(fn -> consume(chan, payload, meta) end)
     {:noreply, chan}
+  end
+
+  def handle_info(:try_to_connect, _state) do
+    connect()
+  end
+
+  def handle_info({:DOWN, _, :process, _pid, _reason}, _state) do
+    connect()
+  end
+
+  def connect() do
+    case rabbitmq_connect() do
+      {:ok, chan} ->
+        Logger.debug("#{@name}: files sync listener connected to RabbitMQ")
+        {:noreply, chan}
+
+      {:error, _message} ->
+        Logger.warning("#{@name}: failed to connect RabbitMQ during init. Scheduling reconnect.")
+
+        Process.send_after(@name, :try_to_connect, @reconnect_interval)
+        {:noreply, :state}
+    end
   end
 
   def rabbitmq_connect() do
     Logger.debug("Start connection...")
-    connection_string = @connection_string
 
-    case Connection.open(connection_string) do
+    case Connection.open(@connection_string) do
       {:ok, conn} ->
-        Logger.debug("#{@name}: listener connection '#{connection_string}'")
-        {:ok, chan} = Channel.open(conn)
+        Logger.debug("#{@name}: listener connection '#{@connection_string}'")
 
-        setup(chan)
+        Process.monitor(conn.pid)
 
-        {:ok, chan}
+        case Channel.open(conn) do
+          {:ok, chan} ->
+            setup(chan)
 
-      {:error, message} ->
-        Logger.warning("#{@name}: Error open connection: #{message}")
-        {:error, message}
+            {:ok, chan}
+
+          {:error, reason} ->
+            Logger.warning("#{@name}: Error open channel: #{reason}")
+            {:error, reason}
+        end
+
+      {:error, reason} ->
+        Logger.warning("#{@name}: Error open connection: #{reason}")
+        {:error, reason}
     end
   end
 
@@ -75,7 +96,7 @@ defmodule MediaServerWeb.AMQP.PingListener do
     chan
   end
 
-  defp consume(chan, payload, %{routing_key: routing_key, delivery_tag: tag} = meta) do
+  defp consume(chan, payload, %{routing_key: routing_key, delivery_tag: _tag} = meta) do
     [_tag, method] = String.split(routing_key, ".")
 
     {:ok, args} = deserialize(payload)
@@ -101,7 +122,6 @@ defmodule MediaServerWeb.AMQP.PingListener do
   defp serialize(data), do: Poison.encode(data)
 
   defp deserialize(sdata), do: Poison.decode(sdata, keys: :atoms)
-
 
   def ping(time) do
     %{value: "ok", time: time}
