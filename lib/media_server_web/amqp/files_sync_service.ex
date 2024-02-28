@@ -8,7 +8,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
   alias MediaServer.Util.TimeUtil
 
   @name __MODULE__
-  @check_interval 1000
+  @check_interval 10 * 1000
 
   @parents Application.compile_env(:media_server, :parents)
   @my_tag Application.compile_env(:media_server, :tag)
@@ -42,11 +42,12 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
             send(@name, {:check_months, diff, tag})
           end
         else
-          error -> Logger.error("#{@name}: Error check_content in reason: #{inspect(error)}")
+          error -> Logger.warning("#{@name}: Error check_content in reason: #{inspect(error)}")
         end
       end)
     end)
 
+    Process.send_after(@name, :check_content, @check_interval)
     {:noreply, state}
   end
 
@@ -64,7 +65,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
             send(@name, {:check_days, diff, tag})
           end
         else
-          error -> Logger.error("#{@name}: Error check_months in reason: #{inspect(error)}")
+          error -> Logger.warning("#{@name}: Error check_months in reason: #{inspect(error)}")
         end
       end)
     end)
@@ -85,7 +86,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
             send(@name, {:check_rows, diff, tag})
           end
         else
-          error -> Logger.error("#{@name}: Error check_days in reason: #{inspect(error)}")
+          error -> Logger.warning("#{@name}: Error check_days in reason: #{inspect(error)}")
         end
       end)
     end)
@@ -97,30 +98,32 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
     rows
     |> Enum.each(fn row ->
       spawn(fn ->
-        {:ok, remote_file} = RpcClient.get_by_uuid(tag, row[:label])
+        with {:ok, remote_file} <- RpcClient.get_by_uuid(tag, row[:label]),
+             remote_file <- %{
+               remote_file
+               | date_create: TimeUtil.from_iso_to_date!(remote_file[:date_create])
+             } do
+          case Content.get_by_uuid(row[:label]) do
+            nil ->
+              Logger.debug("#{@name}: The file does not exist: #{inspect(remote_file)}")
 
-        remote_file = %{
-          remote_file
-          | date_create: TimeUtil.from_iso_to_date!(remote_file[:date_create])
-        }
-
-        case Content.get_by_uuid(row[:label]) do
-          nil ->
-            Logger.debug("#{@name}: The file does not exist: #{inspect(remote_file)}")
-
-            Content.add_file_data!(remote_file)
-            RpcClient.request_file_download(tag, @my_tag, remote_file[:uuid])
-
-          file ->
-            Logger.debug("#{@name}: The file exist")
-
-            if Content.parse_content(file) != remote_file do
-              Content.update_file_data!(file, remote_file)
-            end
-
-            if file.check_sum != remote_file[:check_sum] do
+              Content.add_file_data!(remote_file)
               RpcClient.request_file_download(tag, @my_tag, remote_file[:uuid])
-            end
+
+            file ->
+              Logger.debug("#{@name}: The file exist")
+
+              if Content.parse_content(file) != remote_file do
+                Content.update_file_data!(file, remote_file)
+              end
+
+              if file.check_sum != remote_file[:check_sum] do
+                RpcClient.request_file_download(tag, @my_tag, remote_file[:uuid])
+              end
+          end
+        else
+          e ->
+            Logger.warning("#{@name}: Error check_rows in reason #{inspect(e)}")
         end
       end)
     end)

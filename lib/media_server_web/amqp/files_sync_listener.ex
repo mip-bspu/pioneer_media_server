@@ -6,9 +6,9 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   alias MediaServer.Content
   alias MediaServerWeb.Rpc.RpcClient
 
-  @name __MODULE__
   @reconnect_interval 10000
 
+  @name __MODULE__
   @connection_string Application.compile_env(:pioneer_rpc, :connection_string)
 
   @queues Enum.map(
@@ -30,15 +30,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   def init(_opts) do
     Logger.info("#{@name}: starting files sync listener")
 
-    case rabbitmq_connect() do
-      {:ok, chan} ->
-        Logger.debug("#{@name}: files sync listener connected to RabbitMQ")
-        {:ok, chan}
-
-      {:error, _message} ->
-        Logger.warning("#{@name}: failed to connect RabbitMQ during init. Scheduling reconnect.")
-        {:ok, :state}
-    end
+    connect()
   end
 
   # Confirmation sent by the broker after registering this process as a consumer
@@ -57,27 +49,52 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   end
 
   def handle_info({:basic_deliver, payload, meta}, chan) do
-    # You might want to run payload consumption in separate Tasks in production
-    consume(chan, payload, meta)
+    spawn(fn -> consume(chan, payload, meta) end)
     {:noreply, chan}
+  end
+
+  def handle_info({:DOWN, _, :process, _pid, _reason}, _state) do
+    {:noreply, connect()}
+  end
+
+  def handle_info(:try_to_connect, _state), do: connect()
+
+  def connect() do
+    case rabbitmq_connect() do
+      {:ok, chan} ->
+        Logger.debug("#{@name}: files sync listener connected to RabbitMQ")
+        {:ok, chan}
+
+      {:error, _message} ->
+        Logger.warning("#{@name}: failed to connect RabbitMQ during init. Scheduling reconnect.")
+
+        Process.send_after(@name, :try_to_connect, @reconnect_interval)
+        {:ok, :not_connected}
+    end
   end
 
   def rabbitmq_connect() do
     Logger.debug("Start connection...")
-    connection_string = @connection_string
 
-    case Connection.open(connection_string) do
+    case Connection.open(@connection_string) do
       {:ok, conn} ->
-        Logger.debug("#{@name}: listener connection '#{connection_string}'")
-        {:ok, chan} = Channel.open(conn)
+        Logger.debug("#{@name}: listener connection '#{@connection_string}'")
+        Process.monitor(conn.pid)
 
-        setup(chan)
+        case Channel.open(conn) do
+          {:ok, chan} ->
+            setup(chan)
 
-        {:ok, chan}
+            {:ok, chan}
 
-      {:error, message} ->
-        Logger.warning("#{@name}: Error open connection: #{message}")
-        {:error, message}
+          {:error, reason} ->
+            Logger.warning("#{@name}: Error open channel: #{reason}")
+            {:error, reason}
+        end
+
+      {:error, reason} ->
+        Logger.warning("#{@name}: Error open connection: #{reason}")
+        {:error, reason}
     end
   end
 
@@ -93,7 +110,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
     chan
   end
 
-  defp consume(chan, payload, %{routing_key: routing_key, delivery_tag: tag} = meta) do
+  defp consume(chan, payload, %{routing_key: routing_key, delivery_tag: _tag} = meta) do
     [_tag, method] = String.split(routing_key, ".")
 
     {:ok, args} = deserialize(payload)
@@ -112,7 +129,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
         )
 
       {:error, reason} ->
-        Logger.error("Error serialize data: #{reason}")
+        Logger.error("#{@name}: Error serialize data: #{reason}")
     end
   end
 
@@ -137,12 +154,12 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
 
   def get_by_uuid(uuid) do
     try do
-      # TODO: exception
       Content.get_by_uuid!(uuid)
       |> Content.parse_content()
     rescue
       e ->
-        Logger.error("Bad request by uuid: #{inspect(uuid)}, error: #{inspect(e)}")
+        Logger.error("#{@name}: Bad request by uuid: #{inspect(uuid)}, error: #{inspect(e)}")
+        {:error, :bad_request}
     end
   end
 
@@ -151,7 +168,6 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
       upload_chunk(dist_tag, uuid)
     end)
 
-    # TODO: if file exists
     :ok
   end
 
@@ -162,7 +178,6 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   end
 
   def load_chunk(chunk) do
-    IO.inspect(chunk)
     Content.upload_file(chunk)
     :ok
   end
