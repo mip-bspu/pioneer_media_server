@@ -20,7 +20,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
               "request_file_download",
               "load_chunk"
             ],
-            &"#{Application.compile_env(:media_server, :tag)}.#{&1}"
+            &"#{Application.compile_env(:media_server, :queue_tag)}.#{&1}"
           )
 
   def start_link(_state \\ []) do
@@ -30,8 +30,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   def init(_opts) do
     Logger.info("#{@name}: starting files sync listener")
 
-    connect()
-    {:ok, :state}
+    {:ok, connect()}
   end
 
   # Confirmation sent by the broker after registering this process as a consumer
@@ -55,22 +54,22 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   end
 
   def handle_info({:DOWN, _, :process, _pid, _reason}, _state) do
-    connect()
+    {:noreply, connect()}
   end
 
-  def handle_info(:try_to_connect, _state), do: connect()
+  def handle_info(:try_to_connect, _state), do: {:noreply, connect()}
 
   def connect() do
     case rabbitmq_connect() do
       {:ok, chan} ->
         Logger.debug("#{@name}: files sync listener connected to RabbitMQ")
-        {:noreply, chan}
+        chan
 
       {:error, _message} ->
         Logger.warning("#{@name}: failed to connect RabbitMQ during init. Scheduling reconnect.")
 
         Process.send_after(@name, :try_to_connect, @reconnect_interval)
-        {:noreply, :not_connected}
+        :not_connected
     end
   end
 
@@ -110,6 +109,10 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
 
     chan
   end
+
+  defp consume(:not_connected, _payload, _meta),
+    do:
+      Logger.warning("#{@name}: files sync doesn't consume because isn't connected into rabbitMQ")
 
   defp consume(chan, payload, %{routing_key: routing_key, delivery_tag: _tag} = meta) do
     [_tag, method] = String.split(routing_key, ".")
@@ -173,13 +176,13 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   end
 
   defp upload_chunk(tag, uuid) do
-    Content.load_file(uuid, fn chunk ->
+    Content.upload_file(uuid, fn chunk ->
       RpcClient.upload_chunk(tag, chunk)
     end)
   end
 
   def load_chunk(chunk) do
-    Content.upload_file(chunk)
+    Content.load_file(chunk)
     :ok
   end
 end

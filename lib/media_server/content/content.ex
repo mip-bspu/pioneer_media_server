@@ -12,14 +12,14 @@ defmodule MediaServer.Content do
   @filtered_tags """
     with details_file_tags as (
       select uuid, date_create, check_sum, extention, f.name, t.name as tag from files f
-        join file_tags ft on f.id = ft.file_id
-        join tags t on t.id = ft.tag_id
+        left join file_tags ft on f.id = ft.file_id
+        left join tags t on t.id = ft.tag_id
       order by t.name, date_create
     ), array_tags as (
       select uuid, date_create, check_sum, extention, name, array_agg(tag) as tags from details_file_tags ft
       group by uuid, date_create, check_sum, extention, name
     ), filtered_tags as (
-      select * from array_tags where $1 && tags::text[]
+      select * from array_tags where $1 @> tags::text[] or tags::text[] = ARRAY[NULL]
     )
   """
 
@@ -95,6 +95,13 @@ defmodule MediaServer.Content do
     QueryUtil.query_select(@query_all_my_tags, [])
   end
 
+  @query_get_tags """
+    select * from tags where owner = $1 and name = any ($2)
+  """
+  def get_tags(list_tags, owner \\ nil) do
+    QueryUtil.query_select(@query_get_tags, [owner, list_tags])
+  end
+
   def add_tags(owner, tags) do
     Enum.each(tags, fn tag ->
       %Content.Tag{}
@@ -112,8 +119,7 @@ defmodule MediaServer.Content do
       check_sum: file.check_sum || nil,
       extention: file.extention,
       uuid: file.uuid,
-      date_create: file.date_create,
-      tags: Enum.map(file.tags, fn tag -> tag.name end)
+      date_create: file.date_create
     }
   end
 
@@ -122,19 +128,7 @@ defmodule MediaServer.Content do
   def file_path(filename), do: @dist_files <> filename
   def file_path(uuid, ext), do: @dist_files <> uuid <> ext
 
-  def tags_to_map_tags(list_tags) do
-    {_, map_tags} =
-      Enum.reduce(list_tags, {0, %{}}, fn tag, {index, map} ->
-        {
-          index + 1,
-          Map.put(map, index, %{name: tag})
-        }
-      end)
-
-    map_tags
-  end
-
-  def add_file_data!(%{name: name, extention: extention, tags: list_tags} = data) do
+  def add_file_data!(%{name: name, extention: extention, tags: tags} = data) do
     %Content.File{}
     |> Content.File.changeset(%{
       uuid: data[:uuid] || Ecto.UUID.generate(),
@@ -142,19 +136,14 @@ defmodule MediaServer.Content do
       check_sum: data[:check_sum] || nil,
       extention: extention,
       name: name,
-      tags: tags_to_map_tags(list_tags)
+      tags: tags
     })
     |> Repo.insert!()
   end
 
-  def update_file_data!(%Content.File{} = old_file, %{tags: tags} = map_new_file) do
-    IO.inspect(tags)
-
-    old_file
-    |> Content.File.changeset(%{
-      map_new_file
-      | tags: tags_to_map_tags(tags)
-    })
+  def update_file_data!(%Content.File{} = old_file_data, new_file_data) do
+    old_file_data
+    |> Content.File.changeset(new_file_data)
     |> Repo.update!()
   end
 
@@ -172,7 +161,7 @@ defmodule MediaServer.Content do
     end)
   end
 
-  def load_file(uuid, send_func) do
+  def upload_file(uuid, send_func) do
     content = Content.get_by_uuid!(uuid)
     path = Content.file_path(content)
 
@@ -200,7 +189,7 @@ defmodule MediaServer.Content do
   end
 
   # TODO: exception
-  def upload_file(chunk) do
+  def load_file(chunk) do
     case chunk do
       %{
         index: index,

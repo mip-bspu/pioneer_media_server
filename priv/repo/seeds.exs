@@ -12,7 +12,6 @@
 
 alias MediaServer.Repo
 alias MediaServer.Content
-alias MediaServer.NodeServer
 alias MediaServer.Util.TimeUtil
 
 tags = Repo.all(Content.Tag)
@@ -46,7 +45,7 @@ if Mix.env() == :dev do
 
     %Content.File{}
     |> Content.File.changeset(%{
-      uuid: Ecto.UUID.generate(),
+      uuid: "cccc",
       date_create: date,
       extention: ".pdf",
       name: "content 2",

@@ -19,9 +19,9 @@ defmodule MediaServer.Application do
       # Start to serve requests, typically the last entry
       MediaServerWeb.Endpoint,
       MediaServerWeb.Rpc.RpcClient,
-      MediaServerWeb.Rpc.RpcServer
+      MediaServerWeb.Rpc.RpcServer,
       # MediaServerWeb.AMQP.PingListener,
-      # MediaServerWeb.AMQP.FilesSyncListener
+      MediaServerWeb.AMQP.FilesSyncListener
     ]
 
     children =
@@ -29,8 +29,8 @@ defmodule MediaServer.Application do
         children ++
           [
             # MediaServerWeb.AMQP.PingService,
-            MediaServerWeb.AMQP.InitService
-            # MediaServerWeb.AMQP.FilesSyncService
+            MediaServerWeb.AMQP.InitService,
+            MediaServerWeb.AMQP.FilesSyncService
           ]
       else
         children

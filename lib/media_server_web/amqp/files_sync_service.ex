@@ -10,8 +10,8 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
   @name __MODULE__
   @check_interval 10 * 1000
 
-  @parents Application.compile_env(:media_server, :parents)
-  @my_tag Application.compile_env(:media_server, :tag)
+  @parent Application.compile_env(:media_server, :queue_parent)
+  @my_tag Application.compile_env(:media_server, :queue_tag)
 
   def start_link(_state \\ []) do
     GenServer.start_link(@name, [], name: @name)
@@ -25,26 +25,23 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
   end
 
   def request_tags() do
-    # TODO: tags children
-    [@my_tag] ++ @parents
+    {:ok, tags} = Content.get_all_my_tags()
+    Enum.map(tags, fn tag -> tag["name"] end)
   end
 
   def handle_info(:check_content, state) do
-    @parents
-    |> Enum.each(fn tag ->
-      spawn(fn ->
-        with {:ok, remote_state} <- RpcClient.months_state(tag, request_tags()),
-             {:ok, local_state} <- Content.months_state(request_tags()) do
-          diff = remote_state -- local_state
-          Logger.debug("#{@name}: Discovered difference months: #{inspect(diff)}")
+    spawn(fn ->
+      with {:ok, remote_state} <- RpcClient.months_state(@parent, request_tags()),
+           {:ok, local_state} <- Content.months_state(request_tags()) do
+        diff = remote_state -- local_state
+        Logger.debug("#{@name}: Discovered difference months: #{inspect(diff)}")
 
-          if diff != [] do
-            send(@name, {:check_months, diff, tag})
-          end
-        else
-          error -> Logger.warning("#{@name}: Error check_content in reason: #{inspect(error)}")
+        if diff != [] do
+          send(@name, {:check_months, diff, @parent})
         end
-      end)
+      else
+        error -> Logger.warning("#{@name}: Error check_content in reason: #{inspect(error)}")
+      end
     end)
 
     Process.send_after(@name, :check_content, @check_interval)
@@ -108,16 +105,19 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
               Logger.debug("#{@name}: The file does not exist: #{inspect(remote_file)}")
 
               Content.add_file_data!(remote_file)
+
               RpcClient.request_file_download(tag, @my_tag, remote_file[:uuid])
 
             file ->
               Logger.debug("#{@name}: The file exist")
 
               if Content.parse_content(file) != remote_file do
+                Logger.debug("#{@name}: Is data changes")
                 Content.update_file_data!(file, remote_file)
               end
 
               if file.check_sum != remote_file[:check_sum] do
+                Logger.debug("#{@name}: Isn't equals check_sums")
                 RpcClient.request_file_download(tag, @my_tag, remote_file[:uuid])
               end
           end
