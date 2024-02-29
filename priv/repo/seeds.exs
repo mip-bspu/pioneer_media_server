@@ -15,8 +15,22 @@ alias MediaServer.Content
 alias MediaServer.NodeServer
 alias MediaServer.Util.TimeUtil
 
+tags = Repo.all(Content.Tag)
+initial_tags = Application.get_env(:media_server, :initial_tags)
+
+Enum.each(initial_tags -- tags, fn tag ->
+  %Content.Tag{}
+  |> Content.Tag.changeset(%{
+    name: tag
+  })
+  |> Repo.insert!()
+end)
+
 if Mix.env() == :dev do
-  if Application.get_env(:media_server, :parents) == [] && Repo.all(Content.File) == [] do
+  if Application.get_env(:media_server, :queue_parent) == nil && Repo.all(Content.File) == [] do
+    tag_city = Repo.get_by(Content.Tag, name: "city")
+    tag_blg = Repo.get_by(Content.Tag, name: "blg")
+
     date = TimeUtil.current_date_time()
 
     %Content.File{}
@@ -26,9 +40,7 @@ if Mix.env() == :dev do
       extention: ".pdf",
       name: "content 1",
       check_sum: "aaaa",
-      tags: %{
-        0 => %{name: "city"}
-      }
+      tags: [tag_blg]
     })
     |> Repo.insert!()
 
@@ -39,10 +51,7 @@ if Mix.env() == :dev do
       extention: ".pdf",
       name: "content 2",
       check_sum: "abaa",
-      tags: %{
-        0 => %{name: "school"},
-        1 => %{name: "city"}
-      }
+      tags: [tag_blg, tag_city]
     })
     |> Repo.insert!()
 
@@ -53,9 +62,7 @@ if Mix.env() == :dev do
       extention: ".pdf",
       name: "content 3",
       check_sum: "aaba",
-      tags: %{
-        0 => %{name: "school"}
-      }
+      tags: [tag_city]
     })
     |> Repo.insert!()
 
@@ -66,9 +73,7 @@ if Mix.env() == :dev do
       extention: ".pdf",
       name: "content 4",
       check_sum: "aaab",
-      tags: %{
-        0 => %{name: "school"}
-      }
+      tags: [tag_blg]
     })
     |> Repo.insert!()
 
@@ -79,9 +84,7 @@ if Mix.env() == :dev do
       extention: ".pdf",
       name: "content 5",
       check_sum: "bbaa",
-      tags: %{
-        0 => %{name: "school"}
-      }
+      tags: [tag_blg]
     })
     |> Repo.insert!()
 
@@ -92,9 +95,7 @@ if Mix.env() == :dev do
       extention: ".pdf",
       name: "content 6",
       check_sum: "baba",
-      tags: %{
-        0 => %{name: "school"}
-      }
+      tags: [tag_blg]
     })
     |> Repo.insert!()
 
@@ -105,20 +106,18 @@ if Mix.env() == :dev do
       extention: ".pdf",
       name: "content 7",
       check_sum: "baab",
-      tags: %{
-        0 => %{name: "school"}
-      }
+      tags: [tag_blg]
     })
     |> Repo.insert!()
-  end
 
-  if Application.get_env(:media_server, :parents) != [] do
-    %NodeServer.Node{}
-    |> NodeServer.Node.changeset(%{name: "section1"})
-    |> Repo.insert!()
-
-    %NodeServer.Node{}
-    |> NodeServer.Node.changeset(%{name: "section2"})
+    %Content.File{}
+    |> Content.File.changeset(%{
+      uuid: Ecto.UUID.generate(),
+      date_create: Timex.shift(date, months: -2),
+      extention: ".pdf",
+      name: "content 12",
+      check_sum: "baab"
+    })
     |> Repo.insert!()
   end
 end

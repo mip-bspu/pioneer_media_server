@@ -2,10 +2,8 @@ defmodule MediaServerWeb.Rpc.RpcClient do
   use PioneerRpc.PioneerRpcClient,
     connection_string: Application.get_env(:pioneer_rpc, :connection_string)
 
-  @parents Application.compile_env(:media_server, :parents)
-
-  def init_in_parent(parent, tags) do
-    rpc({parent, [tags]})
+  def init_in_parent(parent, my_tag, tags) do
+    rpc({parent, [my_tag, tags]})
   end
 
   def ping_parent(tag, time) do

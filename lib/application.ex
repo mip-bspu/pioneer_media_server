@@ -19,18 +19,19 @@ defmodule MediaServer.Application do
       # Start to serve requests, typically the last entry
       MediaServerWeb.Endpoint,
       MediaServerWeb.Rpc.RpcClient,
-      MediaServerWeb.Rpc.RpcServer,
-      MediaServerWeb.AMQP.PingListener,
-      MediaServerWeb.AMQP.FilesSyncListener,
+      MediaServerWeb.Rpc.RpcServer
+      # MediaServerWeb.AMQP.PingListener,
+      # MediaServerWeb.AMQP.FilesSyncListener
     ]
 
     children =
-      if Application.get_env(:media_server, :parents) != [] do
-        children ++ [
-          MediaServerWeb.AMQP.PingService,
-          MediaServerWeb.AMQP.InitService,
-          MediaServerWeb.AMQP.FilesSyncService
-        ]
+      if Application.get_env(:media_server, :queue_parent) != nil do
+        children ++
+          [
+            # MediaServerWeb.AMQP.PingService,
+            MediaServerWeb.AMQP.InitService
+            # MediaServerWeb.AMQP.FilesSyncService
+          ]
       else
         children
       end

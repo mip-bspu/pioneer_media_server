@@ -66,8 +66,11 @@ config :phoenix, :plug_init_mode, :runtime
 config :swoosh, :api_client, false
 
 config :media_server,
-  tag: "city",
-  parents: [],
+  queue_tag: "city",
+  queue_parent: nil,
+  initial_tags: ["city", "blg"]
+
+config :media_server,
   dist_content: "./files/"
 
 config :pioneer_rpc, connection_string: "amqp://guest:guest@localhost:5672"

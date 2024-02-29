@@ -2,57 +2,47 @@ defmodule MediaServerWeb.AMQP.InitService do
   require Logger
   use GenServer
 
-  alias MediaServerWeb.AMQP.PingService
   alias MediaServerWeb.Rpc.RpcClient
-
-  @name __MODULE__
-  @parents Application.compile_env(:media_server, :parents, [])
+  alias MediaServer.Content
 
   @interval_init 3000
 
-  def reinit_in_parent(), do: GenServer.cast(@name, :init_in_parent)
+  @name __MODULE__
+  @my_queue_tag Application.compile_env(:media_server, :queue_tag)
+  @parent Application.compile_env(:media_server, :queue_parent, nil)
 
   def start_link(_state), do: GenServer.start_link(@name, [], name: @name)
 
   def init(_state) do
-    Logger.info("#{@name}: starting init service in parents: #{inspect(@parents)}")
+    Logger.info("#{@name}: starting init service in #{@parent}")
 
-    Process.send_after(@name, :init_in_parent, @interval_init)
+    send(@name, {:init_in_parent, @parent})
     {:ok, :state}
   end
 
-
-  def handle_cast(:init_in_parent, state) do
-    Enum.each(@parents, fn(parent)->
-      spawn(fn->init_in_parent(parent) end)
-    end)
-    {:noreply, state}
-  end
-
-  def handle_info(:init_in_parent, state) do
-    Enum.each(@parents, fn(parent)->
-      spawn(fn->init_in_parent(parent) end)
-    end)
-    {:noreply, state}
-  end
-
   def handle_info({:init_in_parent, parent}, state) do
-    spawn(fn->init_in_parent(parent) end)
+    spawn(fn -> init_in_parent(parent) end)
+
     {:noreply, state}
   end
 
   def init_in_parent(parent) do
-    if is_integer(PingService.get_ping(parent)) do
-      case RpcClient.init_in_parent(parent, ["school", "section1"]) do
-        {:ok, "ok"}->
+    if parent != nil do
+      {:ok, tags} = Content.get_all_my_tags()
+
+      case RpcClient.init_in_parent(
+             parent,
+             @my_queue_tag,
+             Enum.map(tags, fn tag -> tag["name"] end)
+           ) do
+        {:ok, "ok"} ->
           Logger.debug("#{@name}: initialized in #{parent}")
-        error->
+
+        error ->
           Logger.warning("#{@name}: Error initialization in #{parent}, reason: #{inspect(error)}")
 
           Process.send_after(@name, {:init_in_parent, parent}, @interval_init)
       end
-    else
-      Process.send_after(@name, {:init_in_parent, parent}, @interval_init)
     end
   end
 end

@@ -5,10 +5,13 @@ defmodule MediaServer.Content.Tag do
 
   schema "tags" do
     field(:name, :string)
+    field(:owner, :string, default: nil)
+    # field(:type, :string)
   end
 
   def changeset(item, params \\ %{}) do
     item
-    |> cast(params, [:name])
+    |> cast(params, [:name, :owner])
+    |> unique_constraint(:name)
   end
 end

@@ -12,7 +12,10 @@ defmodule MediaServer.Repo.Migrations.CreateFiles do
 
     create table("tags") do
       add(:name, :string)
+      add(:owner, :string)
     end
+
+    create unique_index(:tags, [:name])
 
     create table("file_tags") do
       add(:file_id, references(:files))

@@ -88,6 +88,24 @@ defmodule MediaServer.Content do
     |> Repo.preload(:tags)
   end
 
+  @query_all_my_tags """
+    select * from tags where owner is null
+  """
+  def get_all_my_tags() do
+    QueryUtil.query_select(@query_all_my_tags, [])
+  end
+
+  def add_tags(owner, tags) do
+    Enum.each(tags, fn tag ->
+      %Content.Tag{}
+      |> Content.Tag.changeset(%{
+        name: tag,
+        owner: owner
+      })
+      |> Repo.insert()
+    end)
+  end
+
   def parse_content(%Content.File{} = file) do
     %{
       name: file.name,
