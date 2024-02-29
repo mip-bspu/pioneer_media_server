@@ -10,7 +10,7 @@ defmodule MediaServerWeb.AMQP.PingListener do
 
   @queues Enum.map(
             ["ping"],
-            &"#{Application.compile_env(:media_server, :tag)}.#{&1}"
+            &"#{Application.compile_env(:media_server, :queue_tag)}.#{&1}"
           )
 
   def start_link(_state \\ []) do
@@ -20,8 +20,7 @@ defmodule MediaServerWeb.AMQP.PingListener do
   def init(_opts) do
     Logger.info("#{@name}: starting ping listener")
 
-    connect()
-    {:ok, :state}
+    {:ok, connect()}
   end
 
   def handle_info({:basic_consume_ok, %{consumer_tag: _consumer_tag}}, chan), do: {:noreply, chan}
@@ -37,24 +36,24 @@ defmodule MediaServerWeb.AMQP.PingListener do
   end
 
   def handle_info(:try_to_connect, _state) do
-    connect()
+    {:noreply, connect()}
   end
 
   def handle_info({:DOWN, _, :process, _pid, _reason}, _state) do
-    connect()
+    {:noreply, connect()}
   end
 
   def connect() do
     case rabbitmq_connect() do
       {:ok, chan} ->
         Logger.debug("#{@name}: files sync listener connected to RabbitMQ")
-        {:noreply, chan}
+        chan
 
       {:error, _message} ->
         Logger.warning("#{@name}: failed to connect RabbitMQ during init. Scheduling reconnect.")
 
         Process.send_after(@name, :try_to_connect, @reconnect_interval)
-        {:noreply, :state}
+        :not_connected
     end
   end
 
@@ -95,6 +94,10 @@ defmodule MediaServerWeb.AMQP.PingListener do
 
     chan
   end
+
+  defp consume(:not_connected, _payload, _meta),
+    do:
+      Logger.warning("#{@name}: files sync doesn't consume because isn't connected into rabbitMQ")
 
   defp consume(chan, payload, %{routing_key: routing_key, delivery_tag: _tag} = meta) do
     [_tag, method] = String.split(routing_key, ".")
