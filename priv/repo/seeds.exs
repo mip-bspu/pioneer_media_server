@@ -20,7 +20,9 @@ initial_tags = Application.get_env(:media_server, :initial_tags)
 Enum.each(initial_tags -- tags, fn tag ->
   %Content.Tag{}
   |> Content.Tag.changeset(%{
-    name: tag
+    name: tag,
+    owner: nil,
+    type: "node"
   })
   |> Repo.insert!()
 end)

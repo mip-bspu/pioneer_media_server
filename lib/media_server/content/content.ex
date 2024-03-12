@@ -106,8 +106,9 @@ defmodule MediaServer.Content do
     Enum.each(tags, fn tag ->
       %Content.Tag{}
       |> Content.Tag.changeset(%{
-        name: tag,
-        owner: owner
+        name: tag["name"],
+        owner: owner,
+        type: tag["type"] || "node"
       })
       |> Repo.insert()
     end)

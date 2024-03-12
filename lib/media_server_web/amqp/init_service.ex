@@ -33,7 +33,7 @@ defmodule MediaServerWeb.AMQP.InitService do
       case RpcClient.init_in_parent(
              parent,
              @my_queue_tag,
-             Enum.map(tags, fn tag -> tag["name"] end)
+             tags
            ) do
         {:ok, "ok"} ->
           Logger.debug("#{@name}: initialized in #{parent}")

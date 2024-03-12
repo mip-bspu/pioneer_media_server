@@ -6,12 +6,13 @@ defmodule MediaServer.Content.Tag do
   schema "tags" do
     field(:name, :string)
     field(:owner, :string, default: nil)
-    # field(:type, :string)
+    # device, action, node
+    field(:type, :string, default: "node")
   end
 
   def changeset(item, params \\ %{}) do
     item
-    |> cast(params, [:name, :owner])
+    |> cast(params, [:name, :owner, :type])
     |> unique_constraint(:name)
   end
 end
