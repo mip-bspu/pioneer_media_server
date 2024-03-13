@@ -6,6 +6,8 @@ defmodule MediaServer.Content do
   alias MediaServer.Util.TimeUtil
   alias MediaServer.Util.QueryUtil
 
+  import Ecto.Query, only: [from: 2]
+
   @dist_files Application.compile_env(:media_server, :dist_content, "./files/")
   @chunk_size 2000
 
@@ -95,32 +97,37 @@ defmodule MediaServer.Content do
     QueryUtil.query_select(@query_all_my_tags, [])
   end
 
-  @query_get_tags """
-    select * from tags where owner = $1 and name = any ($2)
-  """
-  def get_tags(list_tags, owner \\ nil) do
-    QueryUtil.query_select(@query_get_tags, [owner, list_tags])
+  def get_tags(list_tags) do
+    from(t in Content.Tag, where: t.name in ^list_tags and is_nil(t.owner))
+    |> Repo.all()
+  end
+
+  def get_tags(list_tags, owner) do
+    from(t in Content.Tag, where: t.name in ^list_tags and t.owner == ^owner)
+    |> Repo.all()
   end
 
   def add_tags(owner, tags) do
     Enum.each(tags, fn tag ->
       %Content.Tag{}
       |> Content.Tag.changeset(%{
-        name: tag["name"],
+        name: tag[:name],
         owner: owner,
-        type: tag["type"] || "node"
+        type: tag[:type] || "node"
       })
       |> Repo.insert()
     end)
   end
 
-  def parse_content(%Content.File{} = file) do
+  def parse_content(file) do
     %{
       name: file.name,
       check_sum: file.check_sum || nil,
       extention: file.extention,
       uuid: file.uuid,
-      date_create: file.date_create
+      date_create: file.date_create,
+      # warning: ["a", "b"] = ["b", "a"] // false
+      tags: Enum.map(file.tags, fn tag -> %{name: tag.name, owner: tag.owner, type: tag.type} end)
     }
   end
 
@@ -129,15 +136,15 @@ defmodule MediaServer.Content do
   def file_path(filename), do: @dist_files <> filename
   def file_path(uuid, ext), do: @dist_files <> uuid <> ext
 
-  def add_file_data!(%{name: name, extention: extention, tags: tags} = data) do
+  def add_file_data!(data) do
     %Content.File{}
     |> Content.File.changeset(%{
       uuid: data[:uuid] || Ecto.UUID.generate(),
       date_create: data[:date_create] || TimeUtil.current_date_time(),
       check_sum: data[:check_sum] || nil,
-      extention: extention,
-      name: name,
-      tags: tags
+      extention: data[:extention],
+      name: data[:name],
+      tags: data[:tags] || []
     })
     |> Repo.insert!()
   end
@@ -146,20 +153,6 @@ defmodule MediaServer.Content do
     old_file_data
     |> Content.File.changeset(new_file_data)
     |> Repo.update!()
-  end
-
-  def add_file!(name, %Plug.Upload{} = upload, tags) do
-    Repo.transaction(fn ->
-      extention = Path.extname(upload.filename)
-
-      file = add_file_data!(%{name: name, extention: extention, tags: tags})
-
-      file
-      |> Content.File.changeset(%{
-        check_sum: upload!(upload.path, file_path(file.uuid, file.extention))
-      })
-      |> Repo.update!()
-    end)
   end
 
   def upload_file(uuid, send_func) do
@@ -180,7 +173,7 @@ defmodule MediaServer.Content do
     end
   end
 
-  def create_chunk(data, content, index) do
+  defp create_chunk(data, content, index) do
     %{
       index: index,
       uuid: content.uuid,
@@ -209,7 +202,21 @@ defmodule MediaServer.Content do
     end
   end
 
-  def upload!(src_path, dist_path) do
+  def add_file!(name, %Plug.Upload{} = upload, tags) do
+    Repo.transaction(fn ->
+      extention = Path.extname(upload.filename)
+
+      file = add_file_data!(%{name: name, extention: extention, tags: tags})
+
+      file
+      |> Content.File.changeset(%{
+        check_sum: upload!(upload.path, file_path(file.uuid, file.extention))
+      })
+      |> Repo.update!()
+    end)
+  end
+
+  defp upload!(src_path, dist_path) do
     case File.cp(src_path, dist_path) do
       :ok ->
         init_hash = :crypto.hash_init(:sha256)

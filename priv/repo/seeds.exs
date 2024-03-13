@@ -29,6 +29,15 @@ end)
 
 if Mix.env() == :dev do
   if Application.get_env(:media_server, :queue_parent) == nil && Repo.all(Content.File) == [] do
+    tag_office =
+      %Content.Tag{}
+      |> Content.Tag.changeset(%{
+        name: "office",
+        owner: nil,
+        type: "device"
+      })
+      |> Repo.insert!()
+
     tag_city = Repo.get_by(Content.Tag, name: "city")
     tag_blg = Repo.get_by(Content.Tag, name: "blg")
 
@@ -41,7 +50,7 @@ if Mix.env() == :dev do
       extention: ".pdf",
       name: "content 1",
       check_sum: "aaaa",
-      tags: [tag_blg]
+      tags: [tag_blg, tag_office]
     })
     |> Repo.insert!()
 
@@ -118,6 +127,16 @@ if Mix.env() == :dev do
       extention: ".pdf",
       name: "content 12",
       check_sum: "baab"
+    })
+    |> Repo.insert!()
+  end
+
+  if Application.get_env(:media_server, :queue_parent) != nil do
+    %Content.Tag{}
+    |> Content.Tag.changeset(%{
+      name: "office",
+      owner: nil,
+      type: "device"
     })
     |> Repo.insert!()
   end

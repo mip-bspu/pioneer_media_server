@@ -98,22 +98,35 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
         with {:ok, remote_file} <- RpcClient.get_by_uuid(tag, row[:label]),
              remote_file <- %{
                remote_file
-               | date_create: TimeUtil.from_iso_to_date!(remote_file[:date_create])
+               | date_create: TimeUtil.from_iso_to_date!(remote_file[:date_create]),
+                 tags:
+                   Enum.filter(remote_file[:tags], fn tag -> tag[:type] != "node" end)
+                   |> Enum.map(fn tag -> tag[:name] end)
+                   |> Content.get_tags()
              } do
           case Content.get_by_uuid(row[:label]) do
             nil ->
               Logger.debug("#{@name}: The file does not exist: #{inspect(remote_file)}")
 
-              Content.add_file_data!(remote_file)
+              try do
+                Content.add_file_data!(remote_file)
 
-              RpcClient.request_file_download(tag, @my_tag, remote_file[:uuid])
+                RpcClient.request_file_download(tag, @my_tag, remote_file[:uuid])
+              rescue
+                e -> Logger.error("#{@name}: Error add data: #{inspect(e)}")
+              end
 
             file ->
-              Logger.debug("#{@name}: The file exist")
+              Logger.debug("#{@name}: The file exist #{file.name}")
 
-              if Content.parse_content(file) != remote_file do
+              if Content.parse_content(file) != Content.parse_content(remote_file) do
                 Logger.debug("#{@name}: Is data changes")
-                Content.update_file_data!(file, remote_file)
+
+                try do
+                  Content.update_file_data!(file, remote_file)
+                rescue
+                  e -> Logger.error("#{@name}: Error update data: #{inspect(e)}")
+                end
               end
 
               if file.check_sum != remote_file[:check_sum] do
