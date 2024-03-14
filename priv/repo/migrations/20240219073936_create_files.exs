@@ -8,6 +8,8 @@ defmodule MediaServer.Repo.Migrations.CreateFiles do
       add(:check_sum, :string)
       add(:extention, :string)
       add(:name, :string)
+      add(:from, :utc_datetime)
+      add(:to, :utc_datetime)
     end
 
     create table("tags") do

@@ -121,13 +121,11 @@ defmodule MediaServer.Content do
 
   def parse_content(file) do
     %{
-      name: file.name,
-      check_sum: file.check_sum || nil,
-      extention: file.extention,
-      uuid: file.uuid,
-      date_create: file.date_create,
-      # warning: ["a", "b"] = ["b", "a"] // false
-      tags: Enum.map(file.tags, fn tag -> %{name: tag.name, owner: tag.owner, type: tag.type} end)
+      file
+      | check_sum: file.check_sum || nil,
+        # warning: ["a", "b"] = ["b", "a"] // false
+        tags:
+          Enum.map(file.tags, fn tag -> %{name: tag.name, owner: tag.owner, type: tag.type} end)
     }
   end
 
@@ -202,11 +200,15 @@ defmodule MediaServer.Content do
     end
   end
 
-  def add_file!(name, %Plug.Upload{} = upload, tags) do
+  def add_file!(
+        %{name: _name, from: _from, to: _to, tags: tags} = data,
+        %Plug.Upload{} = upload
+      ) do
     Repo.transaction(fn ->
-      extention = Path.extname(upload.filename)
-
-      file = add_file_data!(%{name: name, extention: extention, tags: tags})
+      file =
+        %{data | tags: get_tags(tags)}
+        |> Map.put(:extention, Path.extname(upload.filename))
+        |> add_file_data!()
 
       file
       |> Content.File.changeset(%{

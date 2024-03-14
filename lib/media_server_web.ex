@@ -37,14 +37,27 @@ defmodule MediaServerWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller,
-        formats: [:html, :json],
-        layouts: [html: MediaServerWeb.Layouts]
+      use Phoenix.Controller, namespace: MediaServerWeb
 
       import Plug.Conn
       import MediaServerWeb.Gettext
 
       unquote(verified_routes())
+    end
+  end
+
+  def view do
+    quote do
+      use Phoenix.View,
+        root: "lib/media_server_web/templates",
+        namespace: MediaServerWeb
+
+      # Import convenience functions from controllers
+      import Phoenix.Controller,
+        only: [get_flash: 1, get_flash: 2, view_module: 1, view_template: 1]
+
+      # Include shared imports and aliases for views
+      unquote(view_helpers())
     end
   end
 
@@ -54,6 +67,17 @@ defmodule MediaServerWeb do
         endpoint: MediaServerWeb.Endpoint,
         router: MediaServerWeb.Router,
         statics: MediaServerWeb.static_paths()
+    end
+  end
+
+  defp view_helpers do
+    quote do
+      # Import basic rendering functionality (render, render_layout, etc)
+      import Phoenix.View
+
+      import MediaServerWeb.ErrorHelpers
+      import MediaServerWeb.Gettext
+      alias MediaServerWeb.Router.Helpers, as: Routes
     end
   end
 

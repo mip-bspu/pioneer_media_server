@@ -10,7 +10,8 @@ defmodule MediaServer.Content.File do
     field(:uuid, :string)
     field(:date_create, :utc_datetime)
     field(:check_sum, :string)
-
+    field(:from, :utc_datetime)
+    field(:to, :utc_datetime)
     # file
     field(:extention, :string)
 
@@ -22,7 +23,10 @@ defmodule MediaServer.Content.File do
   def changeset(item, params \\ %{}) do
     item
     |> cast(params, [:extention, :name, :check_sum, :date_create, :uuid])
-    |> put_assoc(:tags, params[:tags] || [])
+    |> put_assoc_if_exist(params[:tags])
     |> validate_required([:uuid, :date_create, :name])
   end
+
+  defp put_assoc_if_exist(item, nil), do: item
+  defp put_assoc_if_exist(item, tags), do: item |> put_assoc(:tags, tags)
 end

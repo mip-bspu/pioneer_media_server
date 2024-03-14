@@ -3,11 +3,26 @@ defmodule MediaServerWeb.ContentController do
 
   alias MediaServer.Content
 
-  def create(conn, %{"name"=>name,"tags"=>tags, "file"=>%Plug.Upload{} = upload}) do
-    tags = String.split(tags, [", ", ","], trim: true)
+  def create(
+        conn,
+        %{
+          "name" => name,
+          "tags" => tags,
+          "from" => from,
+          "to" => to,
+          "file" => %Plug.Upload{} = upload
+        } = _res
+      ) do
+    case Poison.decode(tags) do
+      {:ok, tags} ->
+        {:ok, file} = Content.add_file!(%{name: name, from: from, to: to, tags: tags}, upload)
 
-    Content.add_file!(name, upload, tags)
-    conn
-    |> send_resp(200, "yes")
+        conn
+        |> put_status(200)
+        |> render("data_file.json", %{data_file: file})
+
+      {:error, reason} ->
+        raise(BadRequestError, "Неверные данные #{inspect(reason)}")
+    end
   end
 end
