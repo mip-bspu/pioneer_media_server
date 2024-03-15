@@ -22,7 +22,7 @@ defmodule MediaServer.Content.File do
 
   def changeset(item, params \\ %{}) do
     item
-    |> cast(params, [:extention, :name, :check_sum, :date_create, :uuid])
+    |> cast(params, [:extention, :name, :check_sum, :date_create, :uuid, :from, :to])
     |> put_assoc_if_exist(params[:tags])
     |> validate_required([:uuid, :date_create, :name])
   end
