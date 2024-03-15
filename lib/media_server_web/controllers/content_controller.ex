@@ -2,6 +2,8 @@ defmodule MediaServerWeb.ContentController do
   use MediaServerWeb, :controller
 
   alias MediaServer.Content
+  alias MediaServer.Util.FormatUtil
+
   # TODO: check format files
   def create(
         conn,
@@ -61,5 +63,27 @@ defmodule MediaServerWeb.ContentController do
     conn
     |> put_status(200)
     |> render("data_file.json", %{data_file: file})
+  end
+
+  def list(conn, params) do
+    page = Access.get(params, "page", 0) |> FormatUtil.to_integer()
+    page_size = Access.get(params, "page_size", 20) |> FormatUtil.to_integer()
+
+    tags =
+      Access.get(params, "tags", "")
+      |> String.split([",", ", "], trim: true)
+
+    {total, list} = Content.list_content(page, page_size, tags)
+
+    conn
+    |> put_status(200)
+    |> render("content.json", %{
+      content: %{
+        content: list,
+        total_items: total,
+        page: page,
+        page_size: page_size
+      }
+    })
   end
 end

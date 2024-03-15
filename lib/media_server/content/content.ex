@@ -6,7 +6,7 @@ defmodule MediaServer.Content do
   alias MediaServer.Util.TimeUtil
   alias MediaServer.Util.QueryUtil
 
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query
 
   @dist_files Application.compile_env(:media_server, :dist_content, "./files/")
   @chunk_size 2000
@@ -27,7 +27,7 @@ defmodule MediaServer.Content do
 
   @query_get_by_tags """
     #{@filtered_tags}
-    select * from filtered_tags
+    select * from filtered_tags order by date_create
   """
 
   # check: sql injection
@@ -223,7 +223,7 @@ defmodule MediaServer.Content do
     end)
   end
 
-  def update_file!(%{name: name, tags: tags, from: from, to: to, id: id} = params, upload) do
+  def update_file!(%{name: name, tags: tags, from: from, to: to, id: id} = _params, upload) do
     Repo.transaction(fn ->
       case get_by_id(id) do
         nil ->
@@ -270,6 +270,47 @@ defmodule MediaServer.Content do
         content
         |> Repo.delete!()
     end
+  end
+
+  def query_files_assoc_tags_by_tags(tags) do
+    from(
+      f in Content.File,
+      join: t in assoc(f, :tags),
+      where: t.name in ^tags,
+      preload: [tags: t]
+    )
+  end
+
+  def query_paginate(query, page, page_size) do
+    from(
+      query,
+      limit: ^page_size,
+      offset: ^(page * page_size)
+    )
+  end
+
+  def get_page_content(tags, page, page_size) do
+    tags
+    |> query_files_assoc_tags_by_tags()
+    |> query_paginate(page, page_size)
+    |> Repo.all()
+  end
+
+  @query_get_by_tags_count """
+    #{@filtered_tags}
+    select count(uuid) as count from filtered_tags
+  """
+
+  def get_by_tags_count(tags) do
+    {:ok, [%{"count" => count}]} = QueryUtil.query_select(@query_get_by_tags_count, [tags])
+    count
+  end
+
+  def list_content(page, page_size, tags) do
+    count = get_by_tags_count(tags)
+    list = get_page_content(tags, page, page_size)
+
+    {count, list}
   end
 
   defp upload!(src_path, dist_path) do

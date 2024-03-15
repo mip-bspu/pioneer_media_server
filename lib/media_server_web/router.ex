@@ -8,6 +8,7 @@ defmodule MediaServerWeb.Router do
   scope "/api", MediaServerWeb do
     pipe_through :api
 
+    get("/content", ContentController, :list)
     post("/content", ContentController, :create)
     put("/content/:id", ContentController, :update)
     delete("/content/:id", ContentController, :delete)
