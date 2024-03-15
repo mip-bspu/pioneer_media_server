@@ -17,7 +17,7 @@ defmodule MediaServer.Content.File do
 
     field(:name, :string)
 
-    many_to_many :tags, Content.Tag, join_through: Content.FileTag, on_replace: :delete
+    many_to_many :tags, Content.Tag, join_through: Content.FileTag, on_replace: :delete, on_delete: :delete_all
   end
 
   def changeset(item, params \\ %{}) do

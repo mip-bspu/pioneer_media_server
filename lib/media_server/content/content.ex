@@ -223,10 +223,8 @@ defmodule MediaServer.Content do
     end)
   end
 
-  def update_file!(%{name: name, tags: tags, from: from, to: to} = params, upload) do
+  def update_file!(%{name: name, tags: tags, from: from, to: to, id: id} = params, upload) do
     Repo.transaction(fn ->
-      {id, ""} = Integer.parse(params.id)
-
       case get_by_id(id) do
         nil ->
           raise(NotFound, "Такой контент не существует")
@@ -257,6 +255,21 @@ defmodule MediaServer.Content do
           end
       end
     end)
+  end
+
+  def delete_content!(id) do
+    case Content.get_by_id(id) do
+      nil ->
+        raise(NotFound, "Такой контент не существует")
+
+      %{uuid: uuid, extention: ext} = content ->
+        if File.exists?(file_path(uuid, ext)) do
+          File.rm!(file_path(uuid, ext))
+        end
+
+        content
+        |> Repo.delete!()
+    end
   end
 
   defp upload!(src_path, dist_path) do

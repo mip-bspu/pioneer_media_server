@@ -38,6 +38,8 @@ defmodule MediaServerWeb.ContentController do
       ) do
     case Poison.decode(tags) do
       {:ok, tags} ->
+        {id, ""} = Integer.parse(id)
+
         {:ok, file} =
           Content.update_file!(
             %{id: id, name: name, from: from, to: to, tags: tags},
@@ -51,5 +53,13 @@ defmodule MediaServerWeb.ContentController do
       {:error, reason} ->
         raise(BadRequestError, "Неверные данные #{inspect(reason)}")
     end
+  end
+
+  def delete(conn, %{"id" => id} = _params) do
+    file = Content.delete_content!(id)
+
+    conn
+    |> put_status(200)
+    |> render("data_file.json", %{data_file: file})
   end
 end

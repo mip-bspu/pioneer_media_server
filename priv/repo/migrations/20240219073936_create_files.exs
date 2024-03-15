@@ -21,7 +21,7 @@ defmodule MediaServer.Repo.Migrations.CreateFiles do
     create unique_index(:tags, [:name])
 
     create table("file_tags") do
-      add(:file_id, references(:files))
+      add(:file_id, references(:files, on_delete: :delete_all))
       add(:tag_id, references(:tags))
     end
   end

@@ -10,6 +10,7 @@ defmodule MediaServerWeb.Router do
 
     post("/content", ContentController, :create)
     put("/content/:id", ContentController, :update)
+    delete("/content/:id", ContentController, :delete)
 
   end
 
