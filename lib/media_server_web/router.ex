@@ -9,6 +9,8 @@ defmodule MediaServerWeb.Router do
     pipe_through :api
 
     post("/content", ContentController, :create)
+    put("/content/:id", ContentController, :update)
+
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

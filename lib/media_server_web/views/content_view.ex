@@ -5,6 +5,7 @@ defmodule MediaServerWeb.ContentView do
 
   def render("data_file.json", %{data_file: file}) do
     %{
+      id: file.id,
       date_create: file.date_create,
       from: file.from,
       to: file.to,

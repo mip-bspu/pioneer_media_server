@@ -90,6 +90,11 @@ defmodule MediaServer.Content do
     |> Repo.preload(:tags)
   end
 
+  def get_by_id(id) do
+    Repo.get_by(Content.File, id: id)
+    |> Repo.preload(:tags)
+  end
+
   @query_all_my_tags """
     select * from tags where owner is null
   """
@@ -215,6 +220,42 @@ defmodule MediaServer.Content do
         check_sum: upload!(upload.path, file_path(file.uuid, file.extention))
       })
       |> Repo.update!()
+    end)
+  end
+
+  def update_file!(%{name: name, tags: tags, from: from, to: to} = params, upload) do
+    Repo.transaction(fn ->
+      {id, ""} = Integer.parse(params.id)
+
+      case get_by_id(id) do
+        nil ->
+          raise(NotFound, "Такой контент не существует")
+
+        old_content ->
+          new_content =
+            update_file_data!(old_content, %{
+              name: name,
+              from: from,
+              to: to,
+              tags:
+                tags
+                |> get_tags()
+            })
+
+          if upload != nil do
+            %{uuid: uuid, extention: ext} = old_content
+
+            if File.exists?(file_path(uuid, ext)) do
+              File.rm!(file_path(uuid, ext))
+            end
+
+            new_content
+            |> Content.File.changeset(%{
+              check_sum: upload!(upload.path, file_path(uuid, ext))
+            })
+            |> Repo.update!()
+          end
+      end
     end)
   end
 
