@@ -275,9 +275,8 @@ defmodule MediaServer.Content do
   def query_files_assoc_tags_by_tags(tags) do
     from(
       f in Content.File,
-      join: t in assoc(f, :tags),
-      where: t.name in ^tags,
-      preload: [tags: t]
+      left_join: t in assoc(f, :tags),
+      where: t.name in ^tags or is_nil(t.name)
     )
   end
 
@@ -294,16 +293,14 @@ defmodule MediaServer.Content do
     |> query_files_assoc_tags_by_tags()
     |> query_paginate(page, page_size)
     |> Repo.all()
+    |> Repo.preload(:tags)
   end
 
-  @query_get_by_tags_count """
-    #{@filtered_tags}
-    select count(uuid) as count from filtered_tags
-  """
-
   def get_by_tags_count(tags) do
-    {:ok, [%{"count" => count}]} = QueryUtil.query_select(@query_get_by_tags_count, [tags])
-    count
+    query = query_files_assoc_tags_by_tags(tags)
+
+    from(q in query, select: count(q.uuid))
+    |> Repo.one()
   end
 
   def list_content(page, page_size, tags) do
