@@ -11,6 +11,10 @@ defmodule MediaServer.Content do
   @dist_files Application.compile_env(:media_server, :dist_content, "./files/")
   @chunk_size 2000
 
+  ####################
+  # content sync api #
+  ####################
+
   @filtered_tags """
     with details_file_tags as (
       select uuid, date_create, check_sum, extention, f.name, t.name as tag from files f
@@ -24,16 +28,6 @@ defmodule MediaServer.Content do
       select * from array_tags where $1 @> tags::text[] or tags::text[] = ARRAY[NULL]
     )
   """
-
-  @query_get_by_tags """
-    #{@filtered_tags}
-    select * from filtered_tags order by date_create
-  """
-
-  # check: sql injection
-  def get_by_tags(tags) do
-    QueryUtil.query_select(@query_get_by_tags, [tags])
-  end
 
   @query_hash_rows """
     #{@filtered_tags}
@@ -80,6 +74,10 @@ defmodule MediaServer.Content do
     ])
   end
 
+  ##################
+  # repository api #
+  ##################
+
   def get_by_uuid!(uuid) do
     Repo.get_by!(Content.File, uuid: uuid)
     |> Repo.preload(:tags)
@@ -95,11 +93,47 @@ defmodule MediaServer.Content do
     |> Repo.preload(:tags)
   end
 
-  @query_all_my_tags """
-    select * from tags where owner is null
-  """
+  defp query_files_assoc_tags_by_tags(tags) do
+    from(
+      f in Content.File,
+      left_join: t in assoc(f, :tags),
+      where: t.name in ^tags or is_nil(t.name)
+    )
+  end
+
+  defp query_paginate(query, page, page_size) do
+    from(
+      query,
+      limit: ^page_size,
+      offset: ^(page * page_size)
+    )
+  end
+
+  def get_page_content(tags, page, page_size) do
+    tags
+    |> query_files_assoc_tags_by_tags()
+    |> query_paginate(page, page_size)
+    |> Repo.all()
+    |> Repo.preload(:tags)
+  end
+
+  def get_by_tags(tags) do
+    tags
+    |> query_files_assoc_tags_by_tags()
+    |> Repo.all()
+    |> Repo.preload(:tags)
+  end
+
   def get_all_my_tags() do
-    QueryUtil.query_select(@query_all_my_tags, [])
+    from(t in Content.Tag, where: is_nil(t.owner))
+    |> Repo.all()
+  end
+
+  def get_by_tags_count(tags) do
+    query = query_files_assoc_tags_by_tags(tags)
+
+    from(q in query, select: count(q.uuid))
+    |> Repo.one()
   end
 
   def get_tags(list_tags) do
@@ -124,21 +158,6 @@ defmodule MediaServer.Content do
     end)
   end
 
-  def parse_content(file) do
-    %{
-      file
-      | check_sum: file.check_sum || nil,
-        # warning: ["a", "b"] = ["b", "a"] // false
-        tags:
-          Enum.map(file.tags, fn tag -> %{name: tag.name, owner: tag.owner, type: tag.type} end)
-    }
-  end
-
-  def file_path(%Content.File{} = file), do: @dist_files <> file.uuid <> file.extention
-
-  def file_path(filename), do: @dist_files <> filename
-  def file_path(uuid, ext), do: @dist_files <> uuid <> ext
-
   def add_file_data!(data) do
     %Content.File{}
     |> Content.File.changeset(%{
@@ -158,6 +177,10 @@ defmodule MediaServer.Content do
     |> Repo.update!()
   end
 
+  #########
+  # utils #
+  #########
+
   def upload_file(uuid, send_func) do
     content = Content.get_by_uuid!(uuid)
     path = Content.file_path(content)
@@ -174,15 +197,6 @@ defmodule MediaServer.Content do
         acc + 1
       end)
     end
-  end
-
-  defp create_chunk(data, content, index) do
-    %{
-      index: index,
-      uuid: content.uuid,
-      extention: content.extention,
-      chunk_data: data
-    }
   end
 
   # TODO: exception
@@ -205,6 +219,50 @@ defmodule MediaServer.Content do
     end
   end
 
+  def parse_content(file) do
+    %{
+      file
+      | check_sum: file.check_sum || nil,
+        # warning: ["a", "b"] = ["b", "a"] // false
+        tags:
+          Enum.map(file.tags, fn tag -> %{name: tag.name, owner: tag.owner, type: tag.type} end)
+    }
+  end
+
+  defp create_chunk(data, content, index) do
+    %{
+      index: index,
+      uuid: content.uuid,
+      extention: content.extention,
+      chunk_data: data
+    }
+  end
+
+  def file_path(%Content.File{} = file), do: @dist_files <> file.uuid <> file.extention
+
+  def file_path(filename), do: @dist_files <> filename
+  def file_path(uuid, ext), do: @dist_files <> uuid <> ext
+
+  defp upload!(src_path, dist_path) do
+    case File.cp(src_path, dist_path) do
+      :ok ->
+        init_hash = :crypto.hash_init(:sha256)
+
+        File.stream!(dist_path, 2024)
+        |> Enum.reduce(init_hash, fn chunk, acc ->
+          :crypto.hash_update(acc, chunk)
+        end)
+        |> :crypto.hash_final()
+        |> Base.encode16(case: :lower)
+
+      e ->
+        raise(InternalServerError, "Не удалось загрузить файл, ошибка: #{inspect(e)}")
+    end
+  end
+
+  ####################
+  # controller's api #
+  ####################
   def add_file!(
         %{name: _name, from: _from, to: _to, tags: tags} = data,
         %Plug.Upload{} = upload
@@ -272,58 +330,10 @@ defmodule MediaServer.Content do
     end
   end
 
-  def query_files_assoc_tags_by_tags(tags) do
-    from(
-      f in Content.File,
-      left_join: t in assoc(f, :tags),
-      where: t.name in ^tags or is_nil(t.name)
-    )
-  end
-
-  def query_paginate(query, page, page_size) do
-    from(
-      query,
-      limit: ^page_size,
-      offset: ^(page * page_size)
-    )
-  end
-
-  def get_page_content(tags, page, page_size) do
-    tags
-    |> query_files_assoc_tags_by_tags()
-    |> query_paginate(page, page_size)
-    |> Repo.all()
-    |> Repo.preload(:tags)
-  end
-
-  def get_by_tags_count(tags) do
-    query = query_files_assoc_tags_by_tags(tags)
-
-    from(q in query, select: count(q.uuid))
-    |> Repo.one()
-  end
-
   def list_content(page, page_size, tags) do
     count = get_by_tags_count(tags)
     list = get_page_content(tags, page, page_size)
 
     {count, list}
-  end
-
-  defp upload!(src_path, dist_path) do
-    case File.cp(src_path, dist_path) do
-      :ok ->
-        init_hash = :crypto.hash_init(:sha256)
-
-        File.stream!(dist_path, 2024)
-        |> Enum.reduce(init_hash, fn chunk, acc ->
-          :crypto.hash_update(acc, chunk)
-        end)
-        |> :crypto.hash_final()
-        |> Base.encode16(case: :lower)
-
-      e ->
-        raise(InternalServerError, "Не удалось загрузить файл, ошибка: #{inspect(e)}")
-    end
   end
 end

@@ -25,8 +25,8 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
   end
 
   def request_tags() do
-    {:ok, tags} = Content.get_all_my_tags()
-    Enum.map(tags, fn tag -> tag["name"] end)
+    Content.get_all_my_tags()
+    |> Enum.map(fn tag -> tag.name end)
   end
 
   def handle_info(:check_content, state) do
@@ -120,6 +120,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
               Logger.debug("#{@name}: The file exist #{file.name}")
 
               if Content.parse_content(file) != Content.parse_content(remote_file) do
+                # TODO: is data changes
                 Logger.debug("#{@name}: Is data changes")
 
                 try do
