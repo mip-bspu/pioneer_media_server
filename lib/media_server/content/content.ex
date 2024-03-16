@@ -313,6 +313,8 @@ defmodule MediaServer.Content do
               check_sum: upload!(upload.path, file_path(uuid, ext))
             })
             |> Repo.update!()
+          else
+            new_content
           end
       end
     end)

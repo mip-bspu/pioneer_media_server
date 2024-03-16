@@ -53,7 +53,7 @@ defmodule MediaServerWeb.ContentController do
         |> render("data_file.json", %{data_file: file})
 
       {:error, reason} ->
-        raise(BadRequestError, "Неверные данные #{inspect(reason)}")
+        raise(BadRequestError, "Неверные данные для поля tags: #{inspect(reason)}")
     end
   end
 
