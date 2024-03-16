@@ -21,6 +21,7 @@ defmodule MediaServerWeb.ContentView do
       from: file.from,
       to: file.to,
       name: file.name,
+      extention: file.extention,
       tags: normilize_tags(file.tags)
     }
 
