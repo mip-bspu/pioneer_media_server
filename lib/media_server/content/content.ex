@@ -221,11 +221,14 @@ defmodule MediaServer.Content do
 
   def parse_content(file) do
     %{
-      file
-      | check_sum: file.check_sum || nil,
-        # warning: ["a", "b"] = ["b", "a"] // false
-        tags:
-          Enum.map(file.tags, fn tag -> %{name: tag.name, owner: tag.owner, type: tag.type} end)
+      from: file.from && TimeUtil.from_iso_to_date!(file.from),
+      to: file.to && TimeUtil.from_iso_to_date!(file.to),
+      date_create: TimeUtil.from_iso_to_date!(file.date_create),
+      uuid: file.uuid,
+      name: file.name,
+      check_sum: file.check_sum || nil,
+      # warning: ["a", "b"] = ["b", "a"] // false
+      tags: Enum.map(file.tags, fn tag -> %{name: tag.name, owner: tag.owner, type: tag.type} end)
     }
   end
 

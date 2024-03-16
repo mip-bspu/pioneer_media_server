@@ -28,12 +28,10 @@ defmodule MediaServerWeb.AMQP.InitService do
 
   def init_in_parent(parent) do
     if parent != nil do
-      {:ok, tags} = Content.get_all_my_tags()
-
       case RpcClient.init_in_parent(
              parent,
              @my_queue_tag,
-             tags
+             Content.get_all_my_tags()
            ) do
         {:ok, "ok"} ->
           Logger.debug("#{@name}: initialized in #{parent}")

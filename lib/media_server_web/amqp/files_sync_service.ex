@@ -98,11 +98,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
         with {:ok, remote_file} <- RpcClient.get_by_uuid(tag, row[:label]),
              remote_file <- %{
                remote_file
-               | date_create: TimeUtil.from_iso_to_date!(remote_file[:date_create]),
-                 tags:
-                   Enum.filter(remote_file[:tags], fn tag -> tag[:type] != "node" end)
-                   |> Enum.map(fn tag -> tag[:name] end)
-                   |> Content.get_tags()
+               | tags: Enum.filter(remote_file[:tags], fn tag -> tag[:type] != "node" end)
              } do
           case Content.get_by_uuid(row[:label]) do
             nil ->
@@ -121,7 +117,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
 
               if Content.parse_content(file) != Content.parse_content(remote_file) do
                 # TODO: is data changes
-                Logger.debug("#{@name}: Is data changes")
+                Logger.warning("#{@name}: Is data changes")
 
                 try do
                   Content.update_file_data!(file, remote_file)
