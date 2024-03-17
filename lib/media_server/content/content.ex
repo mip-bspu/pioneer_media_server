@@ -3,6 +3,7 @@ defmodule MediaServer.Content do
 
   alias MediaServer.Repo
   alias MediaServer.Content
+  alias MediaServer.Tags
   alias MediaServer.Util.TimeUtil
   alias MediaServer.Util.QueryUtil
 
@@ -15,7 +16,7 @@ defmodule MediaServer.Content do
   # content sync api #
   ####################
 
-  @filtered_tags """
+  @filtered_by_tags """
     with details_file_tags as (
       select uuid, date_create, check_sum, extention, f.name, t.name as tag from files f
         left join file_tags ft on f.id = ft.file_id
@@ -30,7 +31,7 @@ defmodule MediaServer.Content do
   """
 
   @query_hash_rows """
-    #{@filtered_tags}
+    #{@filtered_by_tags}
     select date_create, uuid, md5(concat(
       name, tags,
       uuid, extention, check_sum,
@@ -124,38 +125,11 @@ defmodule MediaServer.Content do
     |> Repo.preload(:tags)
   end
 
-  def get_all_my_tags() do
-    from(t in Content.Tag, where: is_nil(t.owner))
-    |> Repo.all()
-  end
-
   def get_by_tags_count(tags) do
     query = query_files_assoc_tags_by_tags(tags)
 
     from(q in query, select: count(q.uuid))
     |> Repo.one()
-  end
-
-  def get_tags(list_tags) do
-    from(t in Content.Tag, where: t.name in ^list_tags and is_nil(t.owner))
-    |> Repo.all()
-  end
-
-  def get_tags(list_tags, owner) do
-    from(t in Content.Tag, where: t.name in ^list_tags and t.owner == ^owner)
-    |> Repo.all()
-  end
-
-  def add_tags(owner, tags) do
-    Enum.each(tags, fn tag ->
-      %Content.Tag{}
-      |> Content.Tag.changeset(%{
-        name: tag[:name],
-        owner: owner,
-        type: tag[:type] || "node"
-      })
-      |> Repo.insert()
-    end)
   end
 
   def add_file_data!(data) do
@@ -272,7 +246,7 @@ defmodule MediaServer.Content do
       ) do
     Repo.transaction(fn ->
       file =
-        %{data | tags: get_tags(tags)}
+        %{data | tags: Tags.get_tags(tags)}
         |> Map.put(:extention, Path.extname(upload.filename))
         |> add_file_data!()
 
@@ -298,7 +272,7 @@ defmodule MediaServer.Content do
               to: to,
               tags:
                 tags
-                |> get_tags()
+                |> Tags.get_tags()
             })
 
           if upload != nil do

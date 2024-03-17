@@ -4,12 +4,13 @@ defmodule MediaServerWeb.Rpc.RpcServer do
     connection_string: Application.get_env(:pioneer_rpc, :connection_string)
 
   alias MediaServer.Content
+  alias MediaServer.Tags
 
   @parent Application.compile_env(:media_server, :queue_parent)
 
   def urpc([child, tags]) do
     spawn(fn ->
-      Content.add_tags(child, tags)
+      Tags.add_tags(child, tags)
     end)
 
     :ok

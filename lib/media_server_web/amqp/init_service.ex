@@ -4,6 +4,7 @@ defmodule MediaServerWeb.AMQP.InitService do
 
   alias MediaServerWeb.Rpc.RpcClient
   alias MediaServer.Content
+  alias MediaServer.Tags
 
   @interval_init 3000
 
@@ -31,7 +32,7 @@ defmodule MediaServerWeb.AMQP.InitService do
       case RpcClient.init_in_parent(
              parent,
              @my_queue_tag,
-             Content.get_all_my_tags()
+             Tags.get_all_my_tags()
            ) do
         {:ok, "ok"} ->
           Logger.debug("#{@name}: initialized in #{parent}")

@@ -1,4 +1,4 @@
-defmodule MediaServer.Content.Tag do
+defmodule MediaServer.Tags.Tag do
   use Ecto.Schema
 
   import Ecto.Changeset

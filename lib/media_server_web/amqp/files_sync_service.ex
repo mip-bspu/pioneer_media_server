@@ -5,6 +5,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
 
   alias MediaServerWeb.Rpc.RpcClient
   alias MediaServer.Content
+  alias MediaServer.Tags
   alias MediaServer.Util.TimeUtil
 
   @name __MODULE__
@@ -25,7 +26,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
   end
 
   def request_tags() do
-    Content.get_all_my_tags()
+    Tags.get_all_my_tags()
     |> Enum.map(fn tag -> tag.name end)
   end
 
