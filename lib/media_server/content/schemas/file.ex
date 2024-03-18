@@ -4,6 +4,7 @@ defmodule MediaServer.Content.File do
   import Ecto.Changeset
 
   alias MediaServer.Content
+  alias MediaServer.Tags
 
   schema "files" do
     # sync
@@ -17,7 +18,10 @@ defmodule MediaServer.Content.File do
 
     field(:name, :string)
 
-    many_to_many :tags, Content.Tag, join_through: Content.FileTag, on_replace: :delete, on_delete: :delete_all
+    many_to_many :tags, Tags.Tag,
+      join_through: Content.FileTag,
+      on_replace: :delete,
+      on_delete: :delete_all
   end
 
   def changeset(item, params \\ %{}) do

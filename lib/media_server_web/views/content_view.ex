@@ -2,6 +2,7 @@ defmodule MediaServerWeb.ContentView do
   use MediaServerWeb, :view
 
   alias MediaServer.Content
+  alias MediaServerWeb.TagsView
 
   def render("data_file.json", %{data_file: file}), do: content_info(file)
 
@@ -22,10 +23,6 @@ defmodule MediaServerWeb.ContentView do
       to: file.to,
       name: file.name,
       extention: file.extention,
-      tags: normilize_tags(file.tags)
+      tags: TagsView.normilize_tags(file.tags)
     }
-
-  defp tag_info(tag), do: %{name: tag.name, type: tag.type}
-
-  defp normilize_tags(tags), do: Enum.map(tags, fn tag -> tag_info(tag) end)
 end

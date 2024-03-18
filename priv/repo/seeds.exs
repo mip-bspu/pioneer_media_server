@@ -12,14 +12,15 @@
 
 alias MediaServer.Repo
 alias MediaServer.Content
+alias MediaServer.Tags
 alias MediaServer.Util.TimeUtil
 
-tags = Repo.all(Content.Tag)
+tags = Repo.all(Tags.Tag)
 initial_tags = Application.get_env(:media_server, :initial_tags)
 
 Enum.each(initial_tags -- tags, fn tag ->
-  %Content.Tag{}
-  |> Content.Tag.changeset(%{
+  %Tags.Tag{}
+  |> Tags.Tag.changeset(%{
     name: tag,
     owner: nil,
     type: "node"
@@ -30,16 +31,16 @@ end)
 if Mix.env() == :dev do
   if Application.get_env(:media_server, :queue_parent) == nil && Repo.all(Content.File) == [] do
     tag_office =
-      %Content.Tag{}
-      |> Content.Tag.changeset(%{
+      %Tags.Tag{}
+      |> Tags.Tag.changeset(%{
         name: "office",
         owner: nil,
         type: "device"
       })
       |> Repo.insert!()
 
-    tag_city = Repo.get_by(Content.Tag, name: "city")
-    tag_blg = Repo.get_by(Content.Tag, name: "blg")
+    tag_city = Repo.get_by(Tags.Tag, name: "city")
+    tag_blg = Repo.get_by(Tags.Tag, name: "blg")
 
     date = TimeUtil.current_date_time()
 
@@ -132,8 +133,8 @@ if Mix.env() == :dev do
   end
 
   if Application.get_env(:media_server, :queue_parent) != nil do
-    %Content.Tag{}
-    |> Content.Tag.changeset(%{
+    %Tags.Tag{}
+    |> Tags.Tag.changeset(%{
       name: "office",
       owner: nil,
       type: "device"

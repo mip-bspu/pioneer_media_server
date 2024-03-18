@@ -16,7 +16,24 @@ defmodule MediaServer.Tags do
     |> Repo.all()
   end
 
-  def get_filtered_tags(%{list_tags: list_tags, owner: owner, type: type}) do
+  def get_filtered_tags(filter \\ %{list_tags: :none, list_types: :none}) do
+    list_tags = Access.get(filter, :list_tags, :none)
+    list_types = Access.get(filter, :list_types, :none)
+
+    query = from(t in Tags.Tag)
+
+    query =
+      if list_tags != :none,
+        do: query |> where([t], t.name in ^list_tags),
+        else: query
+
+    query =
+      if list_types != :none,
+        do: query |> where([t], t.type in ^list_types),
+        else: query
+
+    query
+    |> Repo.all()
   end
 
   def add_tags(owner, tags) do
