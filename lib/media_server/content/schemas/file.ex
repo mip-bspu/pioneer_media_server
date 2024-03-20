@@ -3,32 +3,24 @@ defmodule MediaServer.Content.File do
 
   import Ecto.Changeset
 
-  alias MediaServer.Content
-  alias MediaServer.Tags
+  alias MediaServer.Actions
 
   schema "files" do
     # sync
     field(:uuid, :string)
-    field(:date_create, :utc_datetime)
     field(:check_sum, :string)
-    field(:from, :utc_datetime)
-    field(:to, :utc_datetime)
-    # file
-    field(:extention, :string)
 
     field(:name, :string)
+    field(:extention, :string)
 
-    many_to_many :tags, Tags.Tag,
-      join_through: Content.FileTag,
-      on_replace: :delete,
-      on_delete: :delete_all
+    belongs_to(:action, Actions.Action)
   end
 
   def changeset(item, params \\ %{}) do
     item
-    |> cast(params, [:extention, :name, :check_sum, :date_create, :uuid, :from, :to])
-    |> put_assoc_if_exist(params[:tags])
-    |> validate_required([:uuid, :date_create, :name])
+    |> cast(params, [:extention, :name, :check_sum, :uuid])
+    # |> put_assoc_if_exist(params[:tags])
+    |> validate_required([:uuid, :name])
   end
 
   defp put_assoc_if_exist(item, nil), do: item

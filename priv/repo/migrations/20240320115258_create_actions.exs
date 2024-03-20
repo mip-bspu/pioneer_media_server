@@ -1,13 +1,11 @@
-defmodule MediaServer.Repo.Migrations.CreateFiles do
+defmodule MediaServer.Repo.Migrations.CreateActions do
   use Ecto.Migration
 
   def change do
-    create table("files") do
-      add(:uuid, :string)
-      add(:date_create, :utc_datetime)
-      add(:check_sum, :string)
-      add(:extention, :string)
+    create table("actions") do
       add(:name, :string)
+      add(:priority, :integer)
+      add(:date_create, :utc_datetime)
       add(:from, :utc_datetime)
       add(:to, :utc_datetime)
     end
@@ -20,8 +18,8 @@ defmodule MediaServer.Repo.Migrations.CreateFiles do
 
     create unique_index(:tags, [:name])
 
-    create table("file_tags") do
-      add(:file_id, references(:files, on_delete: :delete_all))
+    create table("action_tags") do
+      add(:action_id, references(:actions, on_delete: :delete_all))
       add(:tag_id, references(:tags))
     end
   end
