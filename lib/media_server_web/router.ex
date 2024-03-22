@@ -14,6 +14,8 @@ defmodule MediaServerWeb.Router do
     delete("/content/:id", ContentController, :delete)
 
     get("/tags", TagsController, :list)
+
+    post("/action", ActionController, :create)
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

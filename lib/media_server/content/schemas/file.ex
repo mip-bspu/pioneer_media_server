@@ -1,4 +1,4 @@
-defmodule MediaServer.Content.File do
+defmodule MediaServer.Files.File do
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -6,10 +6,8 @@ defmodule MediaServer.Content.File do
   alias MediaServer.Actions
 
   schema "files" do
-    # sync
     field(:uuid, :string)
     field(:check_sum, :string)
-
     field(:name, :string)
     field(:extention, :string)
 
@@ -18,11 +16,7 @@ defmodule MediaServer.Content.File do
 
   def changeset(item, params \\ %{}) do
     item
-    |> cast(params, [:extention, :name, :check_sum, :uuid])
-    # |> put_assoc_if_exist(params[:tags])
+    |> cast(params, [:extention, :name, :check_sum, :uuid, :action_id])
     |> validate_required([:uuid, :name])
   end
-
-  defp put_assoc_if_exist(item, nil), do: item
-  defp put_assoc_if_exist(item, tags), do: item |> put_assoc(:tags, tags)
 end
