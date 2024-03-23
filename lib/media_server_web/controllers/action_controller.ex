@@ -19,7 +19,7 @@ defmodule MediaServerWeb.ActionController do
       to: params["to"],
       to: TimeUtil.current_date_time(),
       priority: (params["priority"] || 0) |> FormatUtil.to_integer(),
-      tags: Tags.get_filtered_tags(%{list_tags: params["tags"] || :none})
+      tags: Tags.get_tags(params["tags"] || [])
     })
     |> case do
       {:ok, action} ->

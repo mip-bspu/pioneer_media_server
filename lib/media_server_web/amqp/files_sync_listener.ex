@@ -3,6 +3,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   use GenServer
   use AMQP
 
+  alias MediaServer.Actions
   alias MediaServer.Content
   alias MediaServerWeb.Rpc.RpcClient
 
@@ -142,7 +143,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   defp deserialize(sdata), do: Poison.decode(sdata, keys: :atoms)
 
   def months_state(tags \\ []) do
-    {:ok, rows} = Content.months_state(tags)
+    {:ok, rows} = Actions.months_state(tags)
     rows
   end
 

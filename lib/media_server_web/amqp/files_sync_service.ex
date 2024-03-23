@@ -4,7 +4,8 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
   use AMQP
 
   alias MediaServerWeb.Rpc.RpcClient
-  alias MediaServer.Content
+  alias MediaServer.Actions
+  alias MediaServer.Files
   alias MediaServer.Tags
   alias MediaServer.Util.TimeUtil
 
@@ -33,7 +34,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
   def handle_info(:check_content, state) do
     spawn(fn ->
       with {:ok, remote_state} <- RpcClient.months_state(@parent, request_tags()),
-           {:ok, local_state} <- Content.months_state(request_tags()) do
+           {:ok, local_state} <- Actions.months_state(request_tags()) do
         diff = remote_state -- local_state
         Logger.debug("#{@name}: Discovered difference months: #{inspect(diff)}")
 
