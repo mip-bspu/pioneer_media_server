@@ -11,12 +11,12 @@
 # and so on) as they will fail if something goes wrong.
 
 alias MediaServer.Repo
-alias MediaServer.Content
+alias MediaServer.Files
 alias MediaServer.Tags
 alias MediaServer.Actions
 alias MediaServer.Util.TimeUtil
 
-tags = Repo.all(Tags.Tag)
+tags = Repo.all(Tags.Tag) |> Enum.map(fn tag -> tag.name end)
 initial_tags = Application.get_env(:media_server, :initial_tags)
 
 Enum.each(initial_tags -- tags, fn tag ->
@@ -30,7 +30,7 @@ Enum.each(initial_tags -- tags, fn tag ->
 end)
 
 if Mix.env() == :dev do
-  if Application.get_env(:media_server, :queue_parent) == nil && Repo.all(Content.File) == [] do
+  if Application.get_env(:media_server, :queue_parent) == nil do
     tag_office =
       %Tags.Tag{}
       |> Tags.Tag.changeset(%{
@@ -44,6 +44,18 @@ if Mix.env() == :dev do
     tag_blg = Repo.get_by(Tags.Tag, name: "blg")
 
     date = TimeUtil.current_date_time()
+
+    # %Actions.Action{}
+    # |> Actions.Action.changeset(%{
+    #   name: "action 1",
+    #   date_create: date,
+    #   from: Timex.shift(date, days: 3),
+    #   to: Timex.shift(date, days: 6),
+    #   priority: 0,
+    #   tags: [tag_blg, tag_city],
+    #   files: []
+    # })
+    # |> IO.inspect()
 
     # %Content.File{}
     # |> Content.File.changeset(%{

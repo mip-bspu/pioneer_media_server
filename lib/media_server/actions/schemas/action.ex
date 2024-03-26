@@ -9,6 +9,7 @@ defmodule MediaServer.Actions.Action do
 
   schema "actions" do
     field(:name, :string)
+    field(:uuid, :string)
     field(:date_create, :utc_datetime)
     field(:from, :utc_datetime)
     field(:to, :utc_datetime)
@@ -24,9 +25,10 @@ defmodule MediaServer.Actions.Action do
 
   def changeset(item, params \\ %{}) do
     item
-    |> cast(params, [:name, :date_create, :from, :to, :priority])
-    |> validate_required([:name, :from, :to, :priority])
+    |> cast(params, [:name, :date_create, :from, :to, :priority, :uuid])
+    |> validate_required([:uuid, :name, :from, :to, :priority])
     |> validate_inclusion(:priority, 0..3)
+    |> unique_constraint(:uuid)
     |> put_assoc_if_exist(params[:tags])
   end
 

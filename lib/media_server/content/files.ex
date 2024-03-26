@@ -12,6 +12,10 @@ defmodule MediaServer.Files do
   @dist_files Application.compile_env(:media_server, :dist_content, "./files/")
   @chunk_size 2000
 
+  def get_by_uuid(uuid) do
+    Repo.get_by(Files.File, uuid: uuid)
+  end
+
   def add_file_data!(data) do
     %Files.File{}
     |> Files.File.changeset(%{
@@ -48,6 +52,22 @@ defmodule MediaServer.Files do
     end)
   end
 
+  def delete_file!(%{uuid: uuid, extention: ext} = _file) do
+    Repo.get_by(Files.File, uuid: uuid)
+    |> Repo.delete!()
+
+    if File.exists?(file_path(uuid, ext)) do
+      File.rm!(file_path(uuid, ext))
+    end
+  end
+
+  def delete_files!([]), do: :ok
+
+  def delete_files!([file | files]) do
+    delete_file!(file)
+    delete_files!(files)
+  end
+
   def file_path(%Files.File{} = file), do: @dist_files <> file.uuid <> file.extention
 
   def file_path(filename), do: @dist_files <> filename
@@ -68,5 +88,52 @@ defmodule MediaServer.Files do
       e ->
         raise(InternalServerError, "Не удалось загрузить файл, ошибка: #{inspect(e)}")
     end
+  end
+
+  def upload_file(uuid, send_func) do
+    file = get_by_uuid(uuid)
+    IO.puts("file: #{inspect(file)} uuid #{uuid}")
+    path = file_path(file)
+
+    if File.exists?(path) do
+      path
+      |> File.stream!(@chunk_size)
+      |> Enum.reduce(0, fn data, acc ->
+        data
+        |> Base.encode64()
+        |> create_chunk(file, acc)
+        |> send_func.()
+
+        acc + 1
+      end)
+    end
+  end
+
+  def load_file(chunk) do
+    case chunk do
+      %{
+        index: index,
+        uuid: uuid,
+        chunk_data: data,
+        extention: ext
+      } ->
+        if index == 0 && File.exists?(file_path(uuid, ext)) do
+          File.rm!(file_path(uuid, ext))
+        end
+
+        File.write(file_path(uuid, ext), data |> Base.decode64!(), [:append])
+
+      _ ->
+        :error
+    end
+  end
+
+  defp create_chunk(data, file, index) do
+    %{
+      index: index,
+      uuid: file.uuid,
+      extention: file.extention,
+      chunk_data: data
+    }
   end
 end

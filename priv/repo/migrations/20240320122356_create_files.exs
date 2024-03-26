@@ -10,5 +10,7 @@ defmodule MediaServer.Repo.Migrations.CreateFiles do
 
       add(:action_id, references(:actions))
     end
+
+    create unique_index(:files, [:uuid])
   end
 end

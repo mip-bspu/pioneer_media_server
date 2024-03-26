@@ -8,7 +8,7 @@ defmodule MediaServerWeb.ActionView do
 
   def action_info(action) do
     %{
-      id: action.id,
+      id: action.uuid,
       name: action.name,
       date_create: action.date_create,
       from: action.from,

@@ -18,5 +18,6 @@ defmodule MediaServer.Files.File do
     item
     |> cast(params, [:extention, :name, :check_sum, :uuid, :action_id])
     |> validate_required([:uuid, :name])
+    |> unique_constraint(:uuid)
   end
 end

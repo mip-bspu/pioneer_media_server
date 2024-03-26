@@ -4,7 +4,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   use AMQP
 
   alias MediaServer.Actions
-  alias MediaServer.Content
+  alias MediaServer.Files
   alias MediaServerWeb.Rpc.RpcClient
 
   @reconnect_interval 10000
@@ -148,19 +148,19 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   end
 
   def days_of_month_state(tags, date) do
-    {:ok, rows} = Content.days_of_month_state(tags, date)
+    {:ok, rows} = Actions.days_of_month_state(tags, date)
     rows
   end
 
   def rows_of_day_state(tags, date) do
-    {:ok, rows} = Content.rows_of_day_state(tags, date)
+    {:ok, rows} = Actions.rows_of_day_state(tags, date)
     rows
   end
 
   def get_by_uuid(uuid) do
     try do
-      Content.get_by_uuid!(uuid)
-      |> Content.parse_content()
+      Actions.get_by_uuid(uuid)
+      |> Actions.action_normalize()
     rescue
       e ->
         Logger.error("#{@name}: Bad request by uuid: #{inspect(uuid)}, error: #{inspect(e)}")
@@ -177,13 +177,13 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   end
 
   defp upload_chunk(tag, uuid) do
-    Content.upload_file(uuid, fn chunk ->
+    Files.upload_file(uuid, fn chunk ->
       RpcClient.upload_chunk(tag, chunk)
     end)
   end
 
   def load_chunk(chunk) do
-    Content.load_file(chunk)
+    Files.load_file(chunk)
     :ok
   end
 end

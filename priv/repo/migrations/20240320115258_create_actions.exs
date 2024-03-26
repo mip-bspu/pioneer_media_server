@@ -4,6 +4,7 @@ defmodule MediaServer.Repo.Migrations.CreateActions do
   def change do
     create table("actions") do
       add(:name, :string)
+      add(:uuid, :string)
       add(:priority, :integer)
       add(:date_create, :utc_datetime)
       add(:from, :utc_datetime)
@@ -17,6 +18,7 @@ defmodule MediaServer.Repo.Migrations.CreateActions do
     end
 
     create unique_index(:tags, [:name])
+    create unique_index(:actions, [:uuid])
 
     create table("action_tags") do
       add(:action_id, references(:actions, on_delete: :delete_all))
