@@ -29,6 +29,7 @@ defmodule MediaServer.Application do
         children ++
           [
             # MediaServerWeb.AMQP.PingService,
+            MediaServerWeb.AMQP.FilesSyncDownloader,
             MediaServerWeb.AMQP.InitService,
             MediaServerWeb.AMQP.FilesSyncService
           ]

@@ -5,6 +5,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
 
   alias MediaServer.Actions
   alias MediaServer.Files
+  alias MediaServerWeb.AMQP.FilesSyncDownloader
   alias MediaServerWeb.Rpc.RpcClient
 
   @reconnect_interval 10000
@@ -168,22 +169,22 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
     end
   end
 
-  def request_file_download(dist_tag, uuid) do
+  def request_file_download(dist_tag, uuid, action_uuid) do
     spawn(fn ->
-      upload_chunk(dist_tag, uuid)
+      upload_chunk(dist_tag, uuid, action_uuid)
     end)
 
     :ok
   end
 
-  defp upload_chunk(tag, uuid) do
+  defp upload_chunk(tag, uuid, action_uuid) do
     Files.upload_file(uuid, fn chunk ->
-      RpcClient.upload_chunk(tag, chunk)
+      RpcClient.upload_chunk(tag, chunk, action_uuid)
     end)
   end
 
-  def load_chunk(chunk) do
-    Files.load_file(chunk)
+  def load_chunk(chunk, action_uuid) do
+    FilesSyncDownloader.load_chunk(chunk, action_uuid)
     :ok
   end
 end

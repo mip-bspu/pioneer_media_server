@@ -3,11 +3,6 @@ defmodule MediaServer.Files do
 
   alias MediaServer.Repo
   alias MediaServer.Files
-  alias MediaServer.Tags
-  alias MediaServer.Util.TimeUtil
-  alias MediaServer.Util.QueryUtil
-
-  import Ecto.Query
 
   @dist_files Application.compile_env(:media_server, :dist_content, "./files/")
   @chunk_size 2000
@@ -68,44 +63,64 @@ defmodule MediaServer.Files do
     delete_files!(files)
   end
 
-  def file_path(%Files.File{} = file), do: @dist_files <> file.uuid <> file.extention
-
-  def file_path(filename), do: @dist_files <> filename
+  def file_path(file), do: @dist_files <> file.uuid <> file.extention
   def file_path(uuid, ext), do: @dist_files <> uuid <> ext
 
   defp upload!(src_path, dist_path) do
     case File.cp(src_path, dist_path) do
       :ok ->
-        init_hash = :crypto.hash_init(:sha256)
-
-        File.stream!(dist_path, 2024)
-        |> Enum.reduce(init_hash, fn chunk, acc ->
-          :crypto.hash_update(acc, chunk)
-        end)
-        |> :crypto.hash_final()
-        |> Base.encode16(case: :lower)
+        create_hash_sum(dist_path)
 
       e ->
         raise(InternalServerError, "Не удалось загрузить файл, ошибка: #{inspect(e)}")
     end
   end
 
+  def create_hash_sum(path_dist_file) do
+    init_hash = :crypto.hash_init(:sha256)
+
+    File.stream!(path_dist_file, 2024)
+    |> Enum.reduce(init_hash, fn chunk, acc ->
+      :crypto.hash_update(acc, chunk)
+    end)
+    |> :crypto.hash_final()
+    |> Base.encode16(case: :lower)
+  end
+
   def upload_file(uuid, send_func) do
     file = get_by_uuid(uuid)
-    IO.puts("file: #{inspect(file)} uuid #{uuid}")
     path = file_path(file)
 
-    if File.exists?(path) do
-      path
-      |> File.stream!(@chunk_size)
-      |> Enum.reduce(0, fn data, acc ->
-        data
-        |> Base.encode64()
-        |> create_chunk(file, acc)
-        |> send_func.()
+    try do
+      if File.exists?(path) do
+        path
+        |> File.stream!(@chunk_size)
+        |> Enum.reduce(0, fn data, acc ->
+          data
+          |> Base.encode64()
+          |> create_chunk(file, acc)
+          |> send_func.()
 
-        acc + 1
-      end)
+          acc + 1
+        end)
+
+        %{
+          state: :last,
+          uuid: file.uuid,
+          extention: file.extention
+        }
+        |> send_func.()
+      end
+    rescue
+      e ->
+        Logger.error("cancel download file #{file.name}: #{inspect(e)}")
+
+        %{
+          state: :cancel,
+          uuid: file.uuid,
+          extention: file.extention
+        }
+        |> send_func.()
     end
   end
 
@@ -117,11 +132,13 @@ defmodule MediaServer.Files do
         chunk_data: data,
         extention: ext
       } ->
-        if index == 0 && File.exists?(file_path(uuid, ext)) do
-          File.rm!(file_path(uuid, ext))
+        file_path = file_path(uuid, ext)
+
+        if index == 0 && File.exists?(file_path) do
+          File.rm!(file_path)
         end
 
-        File.write(file_path(uuid, ext), data |> Base.decode64!(), [:append])
+        File.write(file_path, data |> Base.decode64!(), [:append])
 
       _ ->
         :error
@@ -130,10 +147,26 @@ defmodule MediaServer.Files do
 
   defp create_chunk(data, file, index) do
     %{
+      state: :load,
       index: index,
       uuid: file.uuid,
       extention: file.extention,
       chunk_data: data
     }
+  end
+
+  def normalize_files(files), do: normalize_files(files, [])
+  defp normalize_files([], list), do: list
+
+  defp normalize_files([file | files], list_norm_files) do
+    normalize_files(files, [
+      %{
+        uuid: file.uuid,
+        extention: file.extention,
+        check_sum: file.check_sum,
+        name: file.name
+      }
+      | list_norm_files
+    ])
   end
 end

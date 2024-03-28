@@ -4,10 +4,10 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
   use AMQP
 
   alias MediaServerWeb.Rpc.RpcClient
+  alias MediaServerWeb.AMQP.FilesSyncDownloader
   alias MediaServer.Actions
   alias MediaServer.Files
   alias MediaServer.Tags
-  alias MediaServer.Util.TimeUtil
   alias MediaServer.Util.FormatUtil
 
   @name __MODULE__
@@ -131,8 +131,10 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
       spawn(fn ->
         with action <- Actions.get_by_uuid(row[:label]) do
           try do
-            Logger.debug("#{@name}: deleting action #{action.name}...")
-            Actions.delete_by_uuid!(action.uuid)
+            if FilesSyncDownloader.get_state_download(action.uuid) == :none do
+              Logger.debug("#{@name}: deleting action #{action.name}...")
+              Actions.delete_by_uuid!(action.uuid)
+            end
           rescue
             e ->
               Logger.error("#{@name}: Error remove_rows in delete_by_uuid: #{inspect(e)}")
@@ -150,14 +152,10 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
     rows
     |> Enum.each(fn row ->
       spawn(fn ->
-        with {:ok, remote_action} <- RpcClient.get_by_uuid(tag, row[:label]),
+        with {:ok, %{tags: tags} = remote_action} <- RpcClient.get_by_uuid(tag, row[:label]),
              remote_action <- %{
                remote_action
-               | tags:
-                   remote_action[:tags]
-                   |> Enum.filter(fn action_tag ->
-                     action_tag[:type] != "node"
-                   end)
+               | tags: tags |> Enum.filter(&(&1[:type] != "node"))
              } do
           case Actions.get_by_uuid(row[:label]) do
             nil ->
@@ -173,9 +171,9 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
                     data_file
                     |> Map.put(:action_id, action.id)
                     |> Files.add_file_data!()
-
-                    RpcClient.request_file_download(tag, @my_tag, data_file[:uuid])
                   end)
+
+                  FilesSyncDownloader.request_download(tag, remote_action[:files], action.uuid)
 
                 {:error, reason} ->
                   Logger.error(
@@ -184,17 +182,13 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
               end
 
             action ->
-              Logger.debug("#{@name}: The action exist #{action.name}")
-
-              normalize_action = Actions.action_normalize(action)
-              normalize_remote_action = Actions.action_normalize(remote_action)
-
-              if normalize_action != normalize_remote_action do
-                Logger.warning("#{@name}: Is data changes")
+              if FilesSyncDownloader.get_state_download(action.uuid) == :none do
+                Logger.debug("#{@name}: The action exist #{action.name}")
 
                 Actions.update_action(action, remote_action)
 
-                if normalize_action.files != normalize_remote_action.files do
+                if Files.normalize_files(action.files) !=
+                     Files.normalize_files(remote_action.files) do
                   Logger.warning("#{@name}: between files is difference")
 
                   delete_files = get_diff_remove(action.files, remote_action.files, :uuid)
@@ -202,7 +196,6 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
 
                   if delete_files != [] do
                     Logger.debug("#{@name}: exists files for deleting #{inspect(delete_files)}")
-
                     Files.delete_files!(delete_files)
                   end
 
@@ -211,26 +204,27 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
                       "#{@name}: exists files for adding or updating #{inspect(add_files)}"
                     )
 
-                    add_files
-                    |> Enum.each(fn file ->
-                      spawn(fn ->
+                    remote_files =
+                      Enum.reduce(add_files, [], fn file, acc ->
                         case Files.get_by_uuid(file.uuid) do
                           nil ->
                             file
                             |> Map.put(:action_id, action.id)
                             |> Files.add_file_data!()
 
-                            RpcClient.request_file_download(tag, @my_tag, file.uuid)
+                            [file | acc]
 
                           old_file ->
                             Files.update_file_data!(old_file, file)
 
-                            if old_file.check_sum != file.check_sum do
-                              RpcClient.request_file_download(tag, @my_tag, file.uuid)
-                            end
+                            if(old_file.check_sum != file.check_sum,
+                              do: [file | acc],
+                              else: acc
+                            )
                         end
                       end)
-                    end)
+
+                    FilesSyncDownloader.request_download(tag, remote_files, action.uuid)
                   end
                 end
               end

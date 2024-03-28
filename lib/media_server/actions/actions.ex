@@ -152,16 +152,7 @@ defmodule MediaServer.Actions do
             type: tag.type
           }
         end),
-      files:
-        action.files
-        |> Enum.map(fn file ->
-          %{
-            name: file.name,
-            check_sum: file.check_sum,
-            uuid: file.uuid,
-            extention: file.extention
-          }
-        end)
+      files: Files.normalize_files(action.files)
     }
   end
 end
