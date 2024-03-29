@@ -11,7 +11,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
   alias MediaServer.Util.FormatUtil
 
   @name __MODULE__
-  @check_interval 10 * 1000
+  @check_interval Application.compile_env(:media_server, :interval_sync_check)
 
   @parent Application.compile_env(:media_server, :queue_parent)
   @my_tag Application.compile_env(:media_server, :queue_tag)

@@ -5,7 +5,7 @@ defmodule MediaServer.Files do
   alias MediaServer.Files
 
   @dist_files Application.compile_env(:media_server, :dist_content, "./files/")
-  @chunk_size 2000
+  @chunk_size Application.compile_env(:media_server, :chunk_size, 2000)
 
   def get_by_uuid(uuid) do
     Repo.get_by(Files.File, uuid: uuid)
