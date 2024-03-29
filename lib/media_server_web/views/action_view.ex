@@ -4,6 +4,14 @@ defmodule MediaServerWeb.ActionView do
   alias MediaServerWeb.TagsView
   alias MediaServerWeb.FilesView
 
+  def render("actions.json", %{actions: actions}),
+    do: %{
+      actions: actions[:actions] |> Enum.map(&action_info(&1)),
+      page: actions[:page],
+      page_size: actions[:page_size],
+      total_items: actions[:total_items]
+    }
+
   def render("action.json", %{action: action}), do: action_info(action)
 
   def action_info(action) do

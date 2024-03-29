@@ -8,6 +8,8 @@ defmodule MediaServer.Actions do
   alias MediaServer.Util.QueryUtil
   alias MediaServer.Files
 
+  import Ecto.Query
+
   ####################
   # sync actions api #
   ####################
@@ -154,5 +156,33 @@ defmodule MediaServer.Actions do
         end),
       files: Files.normalize_files(action.files)
     }
+  end
+
+  def list_actions(tags, page, page_size) do
+    {
+      get_total_actions(tags) |> Repo.one(),
+      get_page_actions(tags, page, page_size)
+      |> Repo.all()
+      |> Repo.preload(:tags)
+      |> Repo.preload(:files)
+    }
+  end
+
+  defp get_total_actions(list_tags) do
+    query_actions_by_tags(list_tags)
+    |> select([a], count(a.uuid))
+  end
+
+  defp get_page_actions(tags, page, page_size) do
+    query_actions_by_tags(tags)
+    |> limit(^page_size)
+    |> offset(^(page * page_size))
+  end
+
+  defp query_actions_by_tags(list_tags) do
+    from(a in Actions.Action,
+      left_join: t in assoc(a, :tags),
+      where: t.name in ^list_tags or is_nil(t.name)
+    )
   end
 end

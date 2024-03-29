@@ -31,4 +31,26 @@ defmodule MediaServerWeb.ActionController do
         raise(BadRequestError, "Неверные данные: #{reason}")
     end
   end
+
+  def list(conn, params \\ %{}) do
+    page = Access.get(params, "page", 0) |> FormatUtil.to_integer()
+    page_size = Access.get(params, "page_size", 10) |> FormatUtil.to_integer()
+
+    tags =
+      Access.get(params, "tags", "")
+      |> String.split([",", ", "], trim: true)
+
+    {total, actions} = Actions.list_actions(tags, page, page_size)
+
+    conn
+    |> put_status(:ok)
+    |> render("actions.json", %{
+      actions: %{
+        actions: actions,
+        total_items: total,
+        page: page,
+        page_size: page_size
+      }
+    })
+  end
 end
