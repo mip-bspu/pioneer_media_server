@@ -12,6 +12,8 @@ defmodule MediaServerWeb.Router do
 
     post("/action", ActionController, :create)
     get("/action", ActionController, :list)
+    put("/action/:uuid", ActionController, :update)
+    delete("/action/:uuid", ActionController, :delete)
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

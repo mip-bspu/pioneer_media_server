@@ -20,11 +20,10 @@ defmodule MediaServerWeb.ActionController do
         end)
 
         # TODO: проверка области доступа
-
         conn
         |> put_status(:ok)
         |> render("action.json", %{
-          action: Actions.get_by_uuid(action.uuid)
+          action: action.uuid |> Actions.get_by_uuid()
         })
 
       {:error, reason} ->
@@ -53,4 +52,46 @@ defmodule MediaServerWeb.ActionController do
       }
     })
   end
+
+  def update(conn, %{"uuid" => uuid} = params) do
+    uuid
+    |> Actions.get_by_uuid()
+    |> if_exists()
+    |> Actions.update_action(%{
+      name: params["name"],
+      from: params["from"],
+      to: params["to"],
+      priority: params["priority"] && params["priority"] |> FormatUtil.to_integer(),
+      tags: params["tags"]
+    })
+    |> case do
+      {:ok, action} ->
+        conn
+        |> put_status(:ok)
+        |> render("action.json", %{
+          action: action.uuid |> Actions.get_by_uuid()
+        })
+
+      {:error, reason} ->
+        raise(BadRequestError, "Неверные данные: #{reason}")
+    end
+  end
+
+  def delete(conn, params \\ %{}) do
+    try do
+      action = Actions.delete_by_uuid!(params[:uuid])
+
+      conn
+      |> put_status(:ok)
+      |> render("action.json", %{
+        action: action
+      })
+    rescue
+      e ->
+        raise(BadRequestError, "Такого события не существует")
+    end
+  end
+
+  defp if_exists(nil), do: raise(BadRequestError, "Такого события не существует")
+  defp if_exists(item), do: item
 end

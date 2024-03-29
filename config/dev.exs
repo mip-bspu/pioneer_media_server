@@ -71,8 +71,9 @@ config :media_server,
   initial_tags: ["city", "blg"]
 
 config :media_server,
-  dist_content: "./files/",
-  interval_sync_check: 10 * 1000,
-  chunk_size: 2000
+  dist_content: "./files/"
+
+# interval_sync_check: 10 * 1000,
+# chunk_size: 2000
 
 config :pioneer_rpc, connection_string: "amqp://guest:guest@localhost:5672"

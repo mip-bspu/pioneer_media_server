@@ -129,11 +129,11 @@ defmodule MediaServer.Actions do
       ) do
     old_action
     |> Actions.Action.changeset(%{
-      name: name,
-      from: from,
-      to: to,
-      priority: priority,
-      tags: tags |> Enum.map(fn tag -> tag.name end) |> Tags.get_tags()
+      name: name || old_action.name,
+      from: from || old_action.from,
+      to: to || old_action.to,
+      priority: priority || old_action.priority,
+      tags: (tags && tags |> Enum.map(& &1.name) |> Tags.get_tags()) || old_action.tags
     })
     |> Repo.update()
   end
