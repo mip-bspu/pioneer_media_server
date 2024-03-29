@@ -15,6 +15,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncDownloader do
     {:ok, %{action_uuids: []}}
   end
 
+  def request_download(_tag, [], _action_uuid), do: :ok
   def request_download(tag, files, action_uuid),
     do: GenServer.cast(@name, {:request_download, tag, files, action_uuid})
 

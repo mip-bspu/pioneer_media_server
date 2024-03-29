@@ -5,8 +5,6 @@ defmodule MediaServerWeb.Rpc.RpcServer do
 
   alias MediaServer.Tags
 
-  @parent Application.compile_env(:media_server, :queue_parent)
-
   def urpc([child, tags]) do
     spawn(fn ->
       Tags.add_tags(child, tags)

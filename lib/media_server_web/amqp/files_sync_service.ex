@@ -182,9 +182,13 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
               end
 
             action ->
-              if FilesSyncDownloader.get_state_download(action.uuid) == :none do
-                Logger.debug("#{@name}: The action exist #{action.name}")
+              state_download = FilesSyncDownloader.get_state_download(action.uuid)
 
+              Logger.debug(
+                "#{@name}: The action exist #{action.name}, state download: #{state_download}"
+              )
+
+              if state_download == :none do
                 Actions.update_action(action, remote_action)
 
                 if Files.normalize_files(action.files) !=

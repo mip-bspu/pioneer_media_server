@@ -3,7 +3,6 @@ defmodule MediaServerWeb.ActionController do
 
   alias MediaServer.Actions
   alias MediaServer.Files
-  alias MediaServer.Tags
   alias MediaServer.Util.FormatUtil
 
   def create(conn, params \\ %{}) do
