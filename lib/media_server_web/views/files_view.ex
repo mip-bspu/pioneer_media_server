@@ -5,7 +5,7 @@ defmodule MediaServerWeb.FilesView do
 
   def file_info(file),
     do: %{
-      id: file.id,
+      id: file.uuid,
       name: file.name,
       extention: file.extention
     }
