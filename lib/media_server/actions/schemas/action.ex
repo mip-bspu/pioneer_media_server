@@ -11,8 +11,8 @@ defmodule MediaServer.Actions.Action do
     field(:name, :string)
     field(:uuid, :string)
     field(:date_create, :utc_datetime)
-    field(:from, :utc_datetime)
-    field(:to, :utc_datetime)
+    field(:from, :date)
+    field(:to, :date)
     field(:priority, :integer)
 
     has_many(:files, Files.File)

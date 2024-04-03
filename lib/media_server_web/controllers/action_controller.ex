@@ -4,12 +4,13 @@ defmodule MediaServerWeb.ActionController do
   alias MediaServer.Actions
   alias MediaServer.Files
   alias MediaServer.Util.FormatUtil
+  alias MediaServer.Util.TimeUtil
 
   def create(conn, params \\ %{}) do
     Actions.add_action(%{
       name: params["name"],
-      from: params["from"],
-      to: params["to"],
+      from: params["from"] |> TimeUtil.parse_date(),
+      to: params["to"] |> TimeUtil.parse_date(),
       priority: (params["priority"] || 0) |> FormatUtil.to_integer(),
       tags: params["tags"]
     })
@@ -87,7 +88,7 @@ defmodule MediaServerWeb.ActionController do
         action: action
       })
     rescue
-      e ->
+      _e ->
         raise(BadRequestError, "Такого события не существует")
     end
   end

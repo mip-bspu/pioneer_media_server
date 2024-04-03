@@ -14,7 +14,6 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
   @check_interval Application.compile_env(:media_server, :interval_sync_check)
 
   @parent Application.compile_env(:media_server, :queue_parent)
-  @my_tag Application.compile_env(:media_server, :queue_tag)
 
   def start_link(_state \\ []) do
     GenServer.start_link(@name, [], name: @name)

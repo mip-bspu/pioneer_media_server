@@ -7,8 +7,8 @@ defmodule MediaServer.Repo.Migrations.CreateActions do
       add(:uuid, :string)
       add(:priority, :integer)
       add(:date_create, :utc_datetime)
-      add(:from, :utc_datetime)
-      add(:to, :utc_datetime)
+      add(:from, :date)
+      add(:to, :date)
     end
 
     create table("tags") do
