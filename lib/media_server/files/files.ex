@@ -3,9 +3,24 @@ defmodule MediaServer.Files do
 
   alias MediaServer.Repo
   alias MediaServer.Files
+  alias MediaServer.Actions
+
+  import Ecto.Query
 
   @dist_files Application.compile_env(:media_server, :dist_content, "./files/")
   @chunk_size Application.compile_env(:media_server, :chunk_size, 2000)
+
+
+  def get_files_by_action_uuid(uuid) do
+    from(
+      a in Actions.Action,
+      join: f in Files.File,
+      on: a.id == f.action_id,
+      where: a.uuid == ^uuid,
+      select: f
+    )
+    |> Repo.all()
+  end
 
   def get_by_uuid(uuid) do
     Repo.get_by(Files.File, uuid: uuid)
