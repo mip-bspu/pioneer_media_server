@@ -168,6 +168,14 @@ defmodule MediaServer.Actions do
     }
   end
 
+  def list_actions_from_period(tags, from, to) do
+    query_actions_by_tags(tags)
+    |> where([a], (^from <= a.from and a.from <= ^to) or (^from <= a.to and a.to <= ^to))
+    |> Repo.all()
+    |> Repo.preload(:tags)
+    |> Repo.preload(:files)
+  end
+
   defp get_total_actions(list_tags) do
     query_actions_by_tags(list_tags)
     |> select([a], count(a.uuid))

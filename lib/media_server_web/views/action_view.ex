@@ -12,6 +12,9 @@ defmodule MediaServerWeb.ActionView do
       total_items: actions[:total_items]
     }
 
+  def render("actions.json", %{range_actions: actions}),
+    do: actions |> Enum.map(&action_info/1)
+
   def render("action.json", %{action: action}), do: action_info(action)
 
   def action_info(action) do

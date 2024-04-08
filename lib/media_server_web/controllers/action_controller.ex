@@ -32,6 +32,22 @@ defmodule MediaServerWeb.ActionController do
     end
   end
 
+  def list_from_period(conn, params \\ %{}) do
+    IO.inspect(params)
+
+    tags = Access.get(params, "tags", "") |> String.split([",", ", "])
+    from = Access.get(params, "from") |> TimeUtil.parse_date()
+    to = Access.get(params, "to") |> TimeUtil.parse_date()
+
+    [from, to] = if(to < from, do: [to, from], else: [from, to])
+
+    conn
+    |> put_status(:ok)
+    |> render("actions.json", %{
+      range_actions: Actions.list_actions_from_period(tags, from, to)
+    })
+  end
+
   def list(conn, params \\ %{}) do
     page = Access.get(params, "page", 0) |> FormatUtil.to_integer()
     page_size = Access.get(params, "page_size", 10) |> FormatUtil.to_integer()
