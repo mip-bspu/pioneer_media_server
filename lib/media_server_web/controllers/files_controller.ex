@@ -3,9 +3,6 @@ defmodule MediaServerWeb.FilesController do
 
   alias MediaServer.Files
 
-  import FFmpex
-  use FFmpex.Options
-
   def list(conn, %{"action_uuid" => uuid} = _params) do
     conn
     |> render("files.json", %{
@@ -18,19 +15,9 @@ defmodule MediaServerWeb.FilesController do
     file = Files.get_by_uuid(uuid)
     path = Files.file_path(file)
 
-    # TODO: video preview
-    case MIME.from_path(path) do
-      "image/" <> format ->
-        conn
-        |> put_resp_content_type("images/" <> format)
-        |> send_file(200, path)
-
-      format ->
-        IO.inspect(format)
-
-        conn
-        |> send_resp(:ok, "ok")
-    end
+    conn
+    |> put_resp_content_type(MIME.from_path(path))
+    |> send_file(200, path)
 
     # TODO: zip
   end
