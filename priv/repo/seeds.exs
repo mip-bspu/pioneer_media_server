@@ -11,11 +11,12 @@
 # and so on) as they will fail if something goes wrong.
 
 alias MediaServer.Repo
-alias MediaServer.Content
+alias MediaServer.Files
 alias MediaServer.Tags
+alias MediaServer.Actions
 alias MediaServer.Util.TimeUtil
 
-tags = Repo.all(Tags.Tag)
+tags = Repo.all(Tags.Tag) |> Enum.map(fn tag -> tag.name end)
 initial_tags = Application.get_env(:media_server, :initial_tags)
 
 Enum.each(initial_tags -- tags, fn tag ->
@@ -29,7 +30,7 @@ Enum.each(initial_tags -- tags, fn tag ->
 end)
 
 if Mix.env() == :dev do
-  if Application.get_env(:media_server, :queue_parent) == nil && Repo.all(Content.File) == [] do
+  if Application.get_env(:media_server, :queue_parent) == nil do
     tag_office =
       %Tags.Tag{}
       |> Tags.Tag.changeset(%{
@@ -44,92 +45,104 @@ if Mix.env() == :dev do
 
     date = TimeUtil.current_date_time()
 
-    %Content.File{}
-    |> Content.File.changeset(%{
-      uuid: "abcd",
-      date_create: date,
-      extention: ".pdf",
-      name: "content 1",
-      check_sum: "aaaa",
-      tags: [tag_blg, tag_office]
-    })
-    |> Repo.insert!()
+    # %Actions.Action{}
+    # |> Actions.Action.changeset(%{
+    #   name: "action 1",
+    #   date_create: date,
+    #   from: Timex.shift(date, days: 3),
+    #   to: Timex.shift(date, days: 6),
+    #   priority: 0,
+    #   tags: [tag_blg, tag_city],
+    #   files: []
+    # })
+    # |> IO.inspect()
 
-    %Content.File{}
-    |> Content.File.changeset(%{
-      uuid: "cccc",
-      date_create: date,
-      extention: ".pdf",
-      name: "content 2",
-      check_sum: "abaa",
-      tags: [tag_blg, tag_city]
-    })
-    |> Repo.insert!()
+    # %Content.File{}
+    # |> Content.File.changeset(%{
+    #   uuid: "abcd",
+    #   date_create: date,
+    #   extention: ".pdf",
+    #   name: "content 1",
+    #   check_sum: "aaaa",
+    #   tags: [tag_blg, tag_office]
+    # })
+    # |> Repo.insert!()
 
-    %Content.File{}
-    |> Content.File.changeset(%{
-      uuid: Ecto.UUID.generate(),
-      date_create: date,
-      extention: ".pdf",
-      name: "content 3",
-      check_sum: "aaba",
-      tags: [tag_city]
-    })
-    |> Repo.insert!()
+    # %Content.File{}
+    # |> Content.File.changeset(%{
+    #   uuid: "cccc",
+    #   date_create: date,
+    #   extention: ".pdf",
+    #   name: "content 2",
+    #   check_sum: "abaa",
+    #   tags: [tag_blg, tag_city]
+    # })
+    # |> Repo.insert!()
 
-    %Content.File{}
-    |> Content.File.changeset(%{
-      uuid: Ecto.UUID.generate(),
-      date_create: Timex.shift(date, months: -1),
-      extention: ".pdf",
-      name: "content 4",
-      check_sum: "aaab",
-      tags: [tag_blg]
-    })
-    |> Repo.insert!()
+    # %Content.File{}
+    # |> Content.File.changeset(%{
+    #   uuid: Ecto.UUID.generate(),
+    #   date_create: date,
+    #   extention: ".pdf",
+    #   name: "content 3",
+    #   check_sum: "aaba",
+    #   tags: [tag_city]
+    # })
+    # |> Repo.insert!()
 
-    %Content.File{}
-    |> Content.File.changeset(%{
-      uuid: Ecto.UUID.generate(),
-      date_create: Timex.shift(date, months: -1, days: 3),
-      extention: ".pdf",
-      name: "content 5",
-      check_sum: "bbaa",
-      tags: [tag_blg]
-    })
-    |> Repo.insert!()
+    # %Content.File{}
+    # |> Content.File.changeset(%{
+    #   uuid: Ecto.UUID.generate(),
+    #   date_create: Timex.shift(date, months: -1),
+    #   extention: ".pdf",
+    #   name: "content 4",
+    #   check_sum: "aaab",
+    #   tags: [tag_blg]
+    # })
+    # |> Repo.insert!()
 
-    %Content.File{}
-    |> Content.File.changeset(%{
-      uuid: Ecto.UUID.generate(),
-      date_create: Timex.shift(date, months: -1, days: 3, minutes: 1),
-      extention: ".pdf",
-      name: "content 6",
-      check_sum: "baba",
-      tags: [tag_blg]
-    })
-    |> Repo.insert!()
+    # %Content.File{}
+    # |> Content.File.changeset(%{
+    #   uuid: Ecto.UUID.generate(),
+    #   date_create: Timex.shift(date, months: -1, days: 3),
+    #   extention: ".pdf",
+    #   name: "content 5",
+    #   check_sum: "bbaa",
+    #   tags: [tag_blg]
+    # })
+    # |> Repo.insert!()
 
-    %Content.File{}
-    |> Content.File.changeset(%{
-      uuid: Ecto.UUID.generate(),
-      date_create: Timex.shift(date, months: -2),
-      extention: ".pdf",
-      name: "content 7",
-      check_sum: "baab",
-      tags: [tag_blg]
-    })
-    |> Repo.insert!()
+    # %Content.File{}
+    # |> Content.File.changeset(%{
+    #   uuid: Ecto.UUID.generate(),
+    #   date_create: Timex.shift(date, months: -1, days: 3, minutes: 1),
+    #   extention: ".pdf",
+    #   name: "content 6",
+    #   check_sum: "baba",
+    #   tags: [tag_blg]
+    # })
+    # |> Repo.insert!()
 
-    %Content.File{}
-    |> Content.File.changeset(%{
-      uuid: Ecto.UUID.generate(),
-      date_create: Timex.shift(date, months: -2),
-      extention: ".pdf",
-      name: "content 12",
-      check_sum: "baab"
-    })
-    |> Repo.insert!()
+    # %Content.File{}
+    # |> Content.File.changeset(%{
+    #   uuid: Ecto.UUID.generate(),
+    #   date_create: Timex.shift(date, months: -2),
+    #   extention: ".pdf",
+    #   name: "content 7",
+    #   check_sum: "baab",
+    #   tags: [tag_blg]
+    # })
+    # |> Repo.insert!()
+
+    # %Content.File{}
+    # |> Content.File.changeset(%{
+    #   uuid: Ecto.UUID.generate(),
+    #   date_create: Timex.shift(date, months: -2),
+    #   extention: ".pdf",
+    #   name: "content 12",
+    #   check_sum: "baab"
+    # })
+    # |> Repo.insert!()
   end
 
   if Application.get_env(:media_server, :queue_parent) != nil do

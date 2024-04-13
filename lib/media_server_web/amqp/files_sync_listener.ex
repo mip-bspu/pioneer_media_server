@@ -3,7 +3,9 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   use GenServer
   use AMQP
 
-  alias MediaServer.Content
+  alias MediaServer.Actions
+  alias MediaServer.Files
+  alias MediaServerWeb.AMQP.FilesSyncDownloader
   alias MediaServerWeb.Rpc.RpcClient
 
   @reconnect_interval 10000
@@ -142,24 +144,24 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   defp deserialize(sdata), do: Poison.decode(sdata, keys: :atoms)
 
   def months_state(tags \\ []) do
-    {:ok, rows} = Content.months_state(tags)
+    {:ok, rows} = Actions.months_state(tags)
     rows
   end
 
   def days_of_month_state(tags, date) do
-    {:ok, rows} = Content.days_of_month_state(tags, date)
+    {:ok, rows} = Actions.days_of_month_state(tags, date)
     rows
   end
 
   def rows_of_day_state(tags, date) do
-    {:ok, rows} = Content.rows_of_day_state(tags, date)
+    {:ok, rows} = Actions.rows_of_day_state(tags, date)
     rows
   end
 
   def get_by_uuid(uuid) do
     try do
-      Content.get_by_uuid!(uuid)
-      |> Content.parse_content()
+      Actions.get_by_uuid(uuid)
+      |> Actions.action_normalize()
     rescue
       e ->
         Logger.error("#{@name}: Bad request by uuid: #{inspect(uuid)}, error: #{inspect(e)}")
@@ -167,22 +169,22 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
     end
   end
 
-  def request_file_download(dist_tag, uuid) do
+  def request_file_download(dist_tag, uuid, action_uuid) do
     spawn(fn ->
-      upload_chunk(dist_tag, uuid)
+      upload_chunk(dist_tag, uuid, action_uuid)
     end)
 
     :ok
   end
 
-  defp upload_chunk(tag, uuid) do
-    Content.upload_file(uuid, fn chunk ->
-      RpcClient.upload_chunk(tag, chunk)
+  defp upload_chunk(tag, uuid, action_uuid) do
+    Files.upload_file(uuid, fn chunk ->
+      RpcClient.upload_chunk(tag, chunk, action_uuid)
     end)
   end
 
-  def load_chunk(chunk) do
-    Content.load_file(chunk)
+  def load_chunk(chunk, action_uuid) do
+    FilesSyncDownloader.load_chunk(chunk, action_uuid)
     :ok
   end
 end

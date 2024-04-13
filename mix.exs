@@ -47,7 +47,8 @@ defmodule MediaServer.MixProject do
       {:dns_cluster, "~> 0.1.1"},
       {:plug_cowboy, "~> 2.5"},
       {:pioneer_rpc, "~> 0.1.5", git: "ssh://git@github.com/mip-bspu/pioneer_elixir_rpc.git"},
-      {:timex, "~> 3.7.0"}
+      {:timex, "~> 3.7.0"},
+      {:mime, "~> 2.0.5"},
     ]
   end
 

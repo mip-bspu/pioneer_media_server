@@ -36,11 +36,11 @@ defmodule MediaServerWeb.Rpc.RpcClient do
     rpc({"#{tag}.get_by_uuid", [uuid]})
   end
 
-  def request_file_download(tag, my_tag, uuid) do
-    rpc({"#{tag}.request_file_download", [my_tag, uuid]})
+  def request_file_download(tag, my_tag, uuid, action_uuid) do
+    rpc({"#{tag}.request_file_download", [my_tag, uuid, action_uuid]})
   end
 
-  def upload_chunk(tag, chunk) do
-    rpc({"#{tag}.load_chunk", [chunk]})
+  def upload_chunk(tag, chunk, action_uuid) do
+    rpc({"#{tag}.load_chunk", [chunk, action_uuid]})
   end
 end

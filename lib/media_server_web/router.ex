@@ -8,12 +8,16 @@ defmodule MediaServerWeb.Router do
   scope "/api", MediaServerWeb do
     pipe_through :api
 
-    get("/content", ContentController, :list)
-    post("/content", ContentController, :create)
-    put("/content/:id", ContentController, :update)
-    delete("/content/:id", ContentController, :delete)
-
     get("/tags", TagsController, :list)
+
+    post("/action", ActionController, :create)
+    get("/action", ActionController, :list)
+    get("/action/period", ActionController, :list_from_period)
+    put("/action/:uuid", ActionController, :update)
+    delete("/action/:uuid", ActionController, :delete)
+    get("/action/files/:action_uuid", FilesController, :list)
+
+    get("/files/:uuid/file", FilesController, :content)
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

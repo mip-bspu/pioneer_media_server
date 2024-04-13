@@ -65,6 +65,35 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
+  amqp_url =
+    System.get_env("AMQP_URL") ||
+      raise """
+          enviroment variable AMQP_URL is missing
+      """
+
+  config :pioneer_rpc,
+    connection_string: amqp_url
+
+  server_name =
+    System.get_env("SERVER_NAME") ||
+      raise """
+        enviroment variable SERVER_NAME is missing
+      """
+
+  parent_server_name = System.get_env("PARENT_SERVER_NAME") || nil
+  interval_sync = System.get_env("INTERVAL_SYNC_CHECK") || 10 * 1000
+  chunk_size = System.get_env("CHUNK_SIZE") || 2000
+
+  config :media_server,
+    queue_tag: server_name,
+    queue_parent: parent_server_name,
+    initial_tags: []
+
+  config :media_server,
+    dist_content: "./files/",
+    interval_sync_check: interval_sync,
+    chunk_size: chunk_size
+
   # ## SSL Support
   #
   # To get SSL working, you will need to add the `https` key

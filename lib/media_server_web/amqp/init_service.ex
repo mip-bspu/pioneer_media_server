@@ -3,7 +3,6 @@ defmodule MediaServerWeb.AMQP.InitService do
   use GenServer
 
   alias MediaServerWeb.Rpc.RpcClient
-  alias MediaServer.Content
   alias MediaServer.Tags
 
   @interval_init 3000

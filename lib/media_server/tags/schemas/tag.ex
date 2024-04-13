@@ -6,8 +6,8 @@ defmodule MediaServer.Tags.Tag do
   schema "tags" do
     field(:name, :string)
     field(:owner, :string, default: nil)
-    # device, action, node
-    field(:type, :string, default: "node")
+    # device, action
+    field(:type, :string, default: "action")
   end
 
   def changeset(item, params \\ %{}) do
