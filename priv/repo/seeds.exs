@@ -14,6 +14,7 @@ alias MediaServer.Repo
 alias MediaServer.Files
 alias MediaServer.Tags
 alias MediaServer.Actions
+alias MediaServer.Users
 alias MediaServer.Util.TimeUtil
 
 tags = Repo.all(Tags.Tag) |> Enum.map(fn tag -> tag.name end)
@@ -29,7 +30,38 @@ Enum.each(initial_tags -- tags, fn tag ->
   |> Repo.insert!()
 end)
 
+admin =
+  %Users.Group{}
+  |> Users.Group.changeset(%{
+    name: "ADMIN"
+  })
+  |> Repo.insert!()
+
+user =
+  %Users.Group{}
+  |> Users.Group.changeset(%{
+    name: "USER"
+  })
+  |> Repo.insert!()
+
 if Mix.env() == :dev do
+  %Users.User{}
+  |> Users.User.changeset(%{
+    login: "admin",
+    password: "admin",
+    groups: [admin]
+  })
+  |> Repo.insert!()
+
+  %Users.User{}
+  |> Users.User.changeset(%{
+    login: "user",
+    password: "user",
+    groups: [user],
+    tags: Repo.all(Tags.Tag)
+  })
+  |> Repo.insert!()
+
   if Application.get_env(:media_server, :queue_parent) == nil do
     tag_office =
       %Tags.Tag{}

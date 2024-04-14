@@ -7,7 +7,10 @@ defmodule MediaServer.Users.User do
   alias MediaServer.Tags
 
   schema "users" do
-    many_to_many :groups, Tags.Tag,
+    field(:login, :string)
+    field(:password, :string)
+
+    many_to_many :tags, Tags.Tag,
       join_through: Users.UserTags,
       on_replace: :delete,
       on_delete: :delete_all
@@ -20,13 +23,14 @@ defmodule MediaServer.Users.User do
 
   def changeset(item, params \\ %{}) do
     item
-    |> cast(params, [:tags, :groups])
-    |> validate_required([:groups])
-    |> put_assoc_if_exist(params[:tags], :tags)
+    |> cast(params, [:login, :password])
+    |> validate_required([:login, :password])
+    |> validate_format(:login, ~r/^[a-zA-Z0-9_]+$/)
+    |> unique_constraint(:login)
     |> put_assoc_if_exist(params[:groups], :groups)
+    |> put_assoc_if_exist(params[:tags], :tags)
   end
 
   def put_assoc_if_exist(item, nil, _key), do: item
-  def put_assoc_if_exist(item, list, key), do:
-    item |> put_assoc(key, list)
+  def put_assoc_if_exist(item, list, key), do: item |> put_assoc(key, list)
 end
