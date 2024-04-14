@@ -9,6 +9,7 @@ defmodule MediaServer.Repo.Migrations.CreateUsers do
     create table("users") do
       add(:login, :string)
       add(:password, :string)
+      add(:active, :boolean)
     end
 
     create unique_index(:users, [:login])

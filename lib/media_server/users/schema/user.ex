@@ -9,6 +9,7 @@ defmodule MediaServer.Users.User do
   schema "users" do
     field(:login, :string)
     field(:password, :string)
+    field(:active, :boolean, default: true)
 
     many_to_many :tags, Tags.Tag,
       join_through: Users.UserTags,
@@ -23,7 +24,7 @@ defmodule MediaServer.Users.User do
 
   def changeset(item, params \\ %{}) do
     item
-    |> cast(params, [:login, :password])
+    |> cast(params, [:login, :password, :active])
     |> validate_required([:login, :password])
     |> validate_format(:login, ~r/^[a-zA-Z0-9_]+$/)
     |> unique_constraint(:login)
