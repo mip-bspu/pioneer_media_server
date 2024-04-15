@@ -1,12 +1,12 @@
 defmodule MediaServer.Actions do
   require Logger
 
+  alias MediaServer.Repo
   alias MediaServer.Actions
   alias MediaServer.Tags
-  alias MediaServer.Repo
+  alias MediaServer.Files
   alias MediaServer.Util.TimeUtil
   alias MediaServer.Util.QueryUtil
-  alias MediaServer.Files
 
   import Ecto.Query
 
