@@ -27,6 +27,13 @@ defmodule MediaServerWeb.SessionController do
     end
   end
 
+  def logout(conn, _params \\ %{}) do
+    conn
+    |> fetch_session()
+    |> clear_session()
+    |> send_resp(:ok, "ok")
+  end
+
   defp check_password?(user, pwd), do:
     user.password == pwd
 

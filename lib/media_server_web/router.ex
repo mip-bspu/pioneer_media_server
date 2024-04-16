@@ -9,6 +9,7 @@ defmodule MediaServerWeb.Router do
     pipe_through :api
 
     post("/", SessionController, :authenticate)
+    post("/logout", SessionController, :logout)
   end
 
   scope "/", MediaServerWeb do
