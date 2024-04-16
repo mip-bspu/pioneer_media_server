@@ -8,4 +8,9 @@ defmodule MediaServer.Users do
     Repo.get_by(Users.User, login: login)
     |> Repo.preload(:tags)
     |> Repo.preload(:groups)
+
+  def get_by_id(id), do:
+    Repo.get_by(Users.User, id: id)
+    |> Repo.preload(:tags)
+    |> Repo.preload(:groups)
 end

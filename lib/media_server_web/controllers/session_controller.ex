@@ -6,12 +6,12 @@ defmodule MediaServerWeb.SessionController do
 
   def authenticate(conn, %{"login" => login, "password" => password} = _params) do
     case Users.get_by_login(login) do
-      nil -> unauthorized_error(conn, "Не существующий пользователь")
+      nil ->
+        unauthorized_error(conn, "Не существующий пользователь")
 
       user ->
         if check_password?(user, password) do
           if user.active do
-
             conn
             |> fetch_session()
             |> clear_session()
@@ -34,13 +34,12 @@ defmodule MediaServerWeb.SessionController do
     |> send_resp(:ok, "ok")
   end
 
-  defp check_password?(user, pwd), do:
-    user.password == pwd
+  defp check_password?(user, pwd), do: user.password == pwd
 
-
-  defp unauthorized_error(conn, message), do:
-    conn
-    |> put_status(401)
-    |> put_view(ErrorView)
-    |> render("unauthorized.json", %{ message: message })
+  defp unauthorized_error(conn, message),
+    do:
+      conn
+      |> put_status(401)
+      |> put_view(ErrorView)
+      |> render("unauthorized.json", %{message: message})
 end

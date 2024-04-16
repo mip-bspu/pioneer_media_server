@@ -12,6 +12,12 @@ defmodule MediaServerWeb.Router do
     post("/logout", SessionController, :logout)
   end
 
+  scope "/admin", MediaServerWeb do
+    pipe_through :api
+
+    get("/users", AdminController, :list_users)
+  end
+
   scope "/", MediaServerWeb do
     pipe_through :api
 

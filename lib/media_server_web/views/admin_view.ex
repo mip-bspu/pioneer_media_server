@@ -1,11 +1,14 @@
-defmodule MediaServerWeb.SessionView do
+defmodule MediaServerWeb.AdminView do
   use MediaServerWeb, :view
 
   alias MediaServerWeb.TagsView
 
-  def render("authentication.json", %{authenticate: user}),
+  def render("users.json", %{users: users}), do: users |> Enum.map(&normilize_user(&1))
+
+  def normilize_user(user),
     do: %{
       login: user.login,
+      active: user.active,
       tags: TagsView.normilize_tags(user.tags),
       groups: normilize_groups(user.groups)
     }
