@@ -12,4 +12,12 @@ defmodule MediaServer.Admin do
     |> Repo.preload(:tags)
     |> Repo.preload(:groups)
   end
+
+  def set_active_user!(user_id, bool) do
+    Users.get_by_id(user_id)
+    |> Users.User.changeset(%{
+      active: bool
+    })
+    |> Repo.update!()
+  end
 end

@@ -5,8 +5,11 @@ defmodule MediaServerWeb.AdminView do
 
   def render("users.json", %{users: users}), do: users |> Enum.map(&normilize_user(&1))
 
+  def render("user.json", %{user: user}), do: normilize_user(user)
+
   def normilize_user(user),
     do: %{
+      id: user.id,
       login: user.login,
       active: user.active,
       tags: TagsView.normilize_tags(user.tags),

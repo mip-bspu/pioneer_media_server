@@ -16,6 +16,7 @@ defmodule MediaServerWeb.Router do
     pipe_through :api
 
     get("/users", AdminController, :list_users)
+    post("/users/:id/active", AdminController, :set_active)
   end
 
   scope "/", MediaServerWeb do
