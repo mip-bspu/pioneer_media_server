@@ -3,6 +3,7 @@ defmodule MediaServer.Admin do
 
   alias MediaServer.Repo
   alias MediaServer.Users
+  alias MediaServer.Tags
 
   import Ecto.Query
 
@@ -15,6 +16,11 @@ defmodule MediaServer.Admin do
 
   def get_groups() do
     Users.Group
+    |> Repo.all()
+  end
+
+  def get_groups(list_groups) do
+    from(g in Users.Group, where: g.name in ^list_groups)
     |> Repo.all()
   end
 

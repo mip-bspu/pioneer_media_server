@@ -32,6 +32,13 @@ defmodule MediaServer.Users.User do
     |> put_assoc_if_exist(params[:tags], :tags)
   end
 
+  def update_changeset(item, params \\ %{}) do
+    item
+    |> cast(params, [])
+    |> put_assoc_if_exist(params[:groups], :groups)
+    |> put_assoc_if_exist(params[:tags], :tags)
+  end
+
   def put_assoc_if_exist(item, nil, _key), do: item
   def put_assoc_if_exist(item, list, key), do: item |> put_assoc(key, list)
 end
