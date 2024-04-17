@@ -6,6 +6,8 @@ defmodule MediaServer.Tags do
 
   import Ecto.Query
 
+  def get_all_tags(), do: get_filtered_tags()
+
   def get_all_my_tags() do
     from(t in Tags.Tag, where: is_nil(t.owner))
     |> Repo.all()

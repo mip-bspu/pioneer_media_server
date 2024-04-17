@@ -17,12 +17,12 @@ defmodule MediaServerWeb.Router do
 
     get("/users", AdminController, :list_users)
     post("/users/:id/active", AdminController, :set_active)
+    get("/tags", TagsController, :list)
+    get("/groups", AdminController, :list_groups)
   end
 
   scope "/", MediaServerWeb do
     pipe_through :api
-
-    get("/tags", TagsController, :list)
 
     post("/action", ActionController, :create)
     get("/action", ActionController, :list)

@@ -1,4 +1,4 @@
-defmodule MediaServer.Plugs.Authentication do
+defmodule MediaServerWeb.Plugs.Authentication do
   import Plug.Conn
 
   alias MediaServer.Users

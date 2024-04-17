@@ -13,6 +13,11 @@ defmodule MediaServer.Admin do
     |> Repo.preload(:groups)
   end
 
+  def get_groups() do
+    Users.Group
+    |> Repo.all()
+  end
+
   def set_active_user!(user_id, bool) do
     Users.get_by_id(user_id)
     |> Users.User.changeset(%{

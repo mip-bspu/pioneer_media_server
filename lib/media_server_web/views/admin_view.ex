@@ -7,6 +7,8 @@ defmodule MediaServerWeb.AdminView do
 
   def render("user.json", %{user: user}), do: normilize_user(user)
 
+  def render("groups.json", %{groups: groups}), do: normilize_groups(groups)
+
   def normilize_user(user),
     do: %{
       id: user.id,
