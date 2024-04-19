@@ -3,6 +3,7 @@ defmodule MediaServerWeb.AdminController do
 
   alias MediaServer.Admin
   alias MediaServer.Users
+  alias MediaServerWeb.ErrorView
 
   plug MediaServerWeb.Plugs.Authentication, ["ADMIN"]
 
@@ -33,6 +34,35 @@ defmodule MediaServerWeb.AdminController do
 
       {:error, reason} ->
         raise(BadRequestError, "Не удалось обновить данные: #{reason}")
+    end
+  end
+
+  def create(conn, %{"login" => login, "password" => password, "groups" => groups} = params) do
+    Users.get_by_login(login)
+    |> case do
+      nil ->
+        Users.add_user(%{
+          login: login,
+          password: password,
+          groups: groups,
+          tags: params["tags"] || []
+        })
+        |> case do
+          {:ok, user} ->
+            conn
+            |> put_status(200)
+            |> render("user.json", %{user: user})
+
+          {:error, reason} ->
+            raise(BadRequestError, "Некоректное значение #{reason}")
+        end
+
+      _user ->
+        conn
+        |> put_status(400)
+        |> put_view(ErrorView)
+        |> render("bad_request.json", %{message: "Пользователь с таким логином уже существует"})
+        |> halt()
     end
   end
 

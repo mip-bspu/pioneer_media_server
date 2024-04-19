@@ -4,6 +4,9 @@ defmodule MediaServerWeb.ErrorView do
   def render("unauthorized.json", message),
     do: %{errors: %{statusText: "Unauthorized", message: get_message(message)}}
 
+  def render("bad_request.json", message),
+    do: %{errors: %{statusText: "BadRequest", message: get_message(message)}}
+
   defp get_message(error) do
     case error do
       %{message: message} -> message
