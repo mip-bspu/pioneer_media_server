@@ -30,21 +30,21 @@ Enum.each(initial_tags -- tags, fn tag ->
   |> Repo.insert!()
 end)
 
-admin =
-  %Users.Group{}
-  |> Users.Group.changeset(%{
-    name: "ADMIN"
-  })
-  |> Repo.insert!()
-
-user =
-  %Users.Group{}
-  |> Users.Group.changeset(%{
-    name: "USER"
-  })
-  |> Repo.insert!()
-
 if Mix.env() == :dev do
+  admin =
+    %Users.Group{}
+    |> Users.Group.changeset(%{
+      name: "ADMIN"
+    })
+    |> Repo.insert!()
+
+  user =
+    %Users.Group{}
+    |> Users.Group.changeset(%{
+      name: "USER"
+    })
+    |> Repo.insert!()
+
   %Users.User{}
   |> Users.User.changeset(%{
     login: "admin",

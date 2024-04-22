@@ -3,6 +3,7 @@ defmodule MediaServerWeb.AdminController do
 
   alias MediaServer.Admin
   alias MediaServer.Users
+  alias MediaServer.Devices
   alias MediaServerWeb.ErrorView
 
   plug MediaServerWeb.Plugs.Authentication, ["ADMIN"]
@@ -19,7 +20,7 @@ defmodule MediaServerWeb.AdminController do
     |> render("groups.json", %{groups: Admin.get_groups()})
   end
 
-  def update(conn, %{"id" => user_id} = params \\ %{}) do
+  def update_user(conn, %{"id" => user_id} = params \\ %{}) do
     user_id
     |> Users.get_by_id()
     |> Users.update_user(%{
@@ -37,7 +38,7 @@ defmodule MediaServerWeb.AdminController do
     end
   end
 
-  def create(conn, %{"login" => login, "password" => password, "groups" => groups} = params) do
+  def create_user(conn, %{"login" => login, "password" => password, "groups" => groups} = params) do
     Users.get_by_login(login)
     |> case do
       nil ->
@@ -85,5 +86,52 @@ defmodule MediaServerWeb.AdminController do
     rescue
       reason -> raise(BadRequestError, "Некоректное значение: #{reason}")
     end
+  end
+
+  def create_device(conn, %{"token" => token} = params \\ %{}) do
+    Devices.get_by_token(token)
+    |> case do
+      nil ->
+        Devices.add_device(%{
+          description: params[:description],
+          token: token
+        })
+        |> case do
+          {:ok, _device} ->
+            conn
+            |> put_status(200)
+            |> send_resp(:ok, "ok")
+
+          {:error, reason} ->
+            raise(BadRequestError, "Некоректное значение: #{reason}")
+        end
+      device ->
+        raise(BadRequestError, "Устройство с таким токеном уже сущеествует")
+    end
+  end
+
+  def delete_device(conn, %{"token" => token} = params \\ %{}) do
+    case Devices.get_by_token(token) do
+      nil ->
+        raise(BadRequestError, "Не правильный токен")
+
+      device->
+        Devices.delete_device(device)
+        |> case do
+          {:ok, device} ->
+            conn
+            |> put_status(200)
+            |> send_resp(:ok, "ok")
+
+          {:error, reason}->
+            raise(InternalServerError, "Не удалось удалить")
+        end
+    end
+  end
+
+  def list_devices(conn, _params \\ %{}) do
+    conn
+    |> put_status(200)
+    |> render("devices.json", %{devices: Devices.list_devices()})
   end
 end

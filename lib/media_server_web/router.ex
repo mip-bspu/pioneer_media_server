@@ -15,10 +15,14 @@ defmodule MediaServerWeb.Router do
   scope "/admin", MediaServerWeb do
     pipe_through :api
 
-    post("/user", AdminController, :create)
+    post("/device", AdminController, :create_device)
+    delete("/device/:token", AdminController, :delete_device)
+    get("/devices", AdminController, :list_devices)
+
+    post("/user", AdminController, :create_user)
     get("/users", AdminController, :list_users)
     post("/users/:id/active", AdminController, :set_active)
-    put("/users/:id", AdminController, :update)
+    put("/users/:id", AdminController, :update_user)
 
     get("/tags", TagsController, :list)
     get("/groups", AdminController, :list_groups)
