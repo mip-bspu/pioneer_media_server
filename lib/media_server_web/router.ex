@@ -5,10 +5,27 @@ defmodule MediaServerWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/api", MediaServerWeb do
+  scope "/auth", MediaServerWeb do
     pipe_through :api
 
+    post("/", SessionController, :authenticate)
+    post("/logout", SessionController, :logout)
+  end
+
+  scope "/admin", MediaServerWeb do
+    pipe_through :api
+
+    post("/user", AdminController, :create)
+    get("/users", AdminController, :list_users)
+    post("/users/:id/active", AdminController, :set_active)
+    put("/users/:id", AdminController, :update)
+
     get("/tags", TagsController, :list)
+    get("/groups", AdminController, :list_groups)
+  end
+
+  scope "/", MediaServerWeb do
+    pipe_through :api
 
     post("/action", ActionController, :create)
     get("/action", ActionController, :list)

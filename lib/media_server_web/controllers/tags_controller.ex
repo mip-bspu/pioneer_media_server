@@ -3,6 +3,8 @@ defmodule MediaServerWeb.TagsController do
 
   alias MediaServer.Tags
 
+  plug MediaServerWeb.Plugs.Authentication, ["ADMIN"] when action in [:list]
+
   def list(conn, params) do
     by_types =
       (params["types"] && params["types"] |> String.split([",", ", "], trim: true)) || :none
