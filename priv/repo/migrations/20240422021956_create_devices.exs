@@ -5,6 +5,7 @@ defmodule MediaServer.Repo.Migrations.CreateDevices do
     create table("devices") do
       add(:description, :string)
       add(:token, :string)
+      add(:last_active, :utc_datetime)
     end
 
     create table("device_tags") do

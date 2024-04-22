@@ -3,12 +3,14 @@ defmodule MediaServerWeb.DevicesController do
 
   alias MediaServer.Devices
 
-  def create(conn, %{"token" => token} = params \\ %{}) do
+  def create(conn, %{"token" => token, "description" => description} = params \\ %{}) do
+    IO.inspect(params)
+
     Devices.get_by_token(token)
     |> case do
       nil ->
         Devices.add_device(%{
-          description: params["description"],
+          description: description,
           token: token,
           tags: params["tags"] || []
         })

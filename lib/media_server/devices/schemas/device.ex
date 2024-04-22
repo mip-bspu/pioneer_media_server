@@ -9,6 +9,7 @@ defmodule MediaServer.Devices.Device do
   schema "devices" do
     field(:description, :string)
     field(:token, :string)
+    field(:last_active, :utc_datetime)
 
     many_to_many :tags, Tags.Tag,
       join_through: Devices.DeviceTags,
@@ -17,9 +18,12 @@ defmodule MediaServer.Devices.Device do
   end
 
   def changeset(conn, params \\ %{}) do
+    IO.inspect(params)
+
     conn
     |> cast(params, [:description, :token])
-    |> validate_required([:token])
+    |> validate_required([:token, :description])
+    |> validate_length(:description, min: 2, max: 50)
     |> put_assoc_if_exist(params[:tags])
   end
 

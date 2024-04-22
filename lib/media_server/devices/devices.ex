@@ -11,10 +11,10 @@ defmodule MediaServer.Devices do
     |> Repo.preload(:tags)
   end
 
-  def add_device(%{ token: token } = params) do
+  def add_device(%{ token: token, description: description } = params) do
     %Devices.Device{}
     |> Devices.Device.changeset(%{
-      description: params[:descrtiption] || "",
+      description: description || "",
       token: token,
       tags: (params[:tags] || []) |> Tags.get_tags()
     })
