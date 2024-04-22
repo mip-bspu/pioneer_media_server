@@ -9,8 +9,6 @@ defmodule MediaServerWeb.AdminView do
 
   def render("groups.json", %{groups: groups}), do: normilize_groups(groups)
 
-  def render("devices.json", %{devices: devices}), do: normilize_devices(devices)
-
   def normilize_user(user),
     do: %{
       id: user.id,
@@ -28,7 +26,8 @@ defmodule MediaServerWeb.AdminView do
       |> Enum.map(fn device ->
         %{
           description: device.description,
-          token: device.token
+          token: device.token,
+          tags: TagsView.normilize_tags(device.tags),
         }
       end)
 end
