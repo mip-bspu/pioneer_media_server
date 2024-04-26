@@ -160,7 +160,7 @@ defmodule MediaServer.Actions do
 
   def list_actions(tags, page, page_size) do
     {
-      get_total_actions(tags) |> Repo.one(),
+      get_total_actions(tags),
       get_page_actions(tags, page, page_size)
       |> Repo.all()
       |> Repo.preload(:tags)
@@ -178,7 +178,9 @@ defmodule MediaServer.Actions do
 
   defp get_total_actions(list_tags) do
     query_actions_by_tags(list_tags)
-    |> select([a], count(a.uuid))
+    |> select([a], [a.uuid, a.id])
+    |> Repo.all()
+    |> length
   end
 
   defp get_page_actions(tags, page, page_size) do
@@ -189,9 +191,9 @@ defmodule MediaServer.Actions do
 
   defp query_actions_by_tags(list_tags) do
     from(a in Actions.Action,
+      distinct: true,
       left_join: t in assoc(a, :tags),
       where: t.name in ^list_tags or is_nil(t.name)
     )
-    |> distinct(true)
   end
 end
