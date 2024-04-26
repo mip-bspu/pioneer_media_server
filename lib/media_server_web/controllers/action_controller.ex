@@ -94,12 +94,12 @@ defmodule MediaServerWeb.ActionController do
     end
   end
 
-  def delete(conn, params \\ %{}) do
+  def delete(conn, %{"uuid" => uuid} = _params) do
     try do
-      action = Actions.delete_by_uuid!(params[:uuid])
+      action = Actions.delete_by_uuid!(uuid)
 
       conn
-      |> put_status(:ok)
+      |> put_status(200)
       |> render("action.json", %{
         action: action
       })

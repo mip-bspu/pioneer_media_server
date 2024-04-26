@@ -93,11 +93,11 @@ defmodule MediaServer.Actions do
   end
 
   def delete_by_uuid!(uuid) do
-    action =
-      Repo.get_by(Actions.Action, uuid: uuid)
-      |> Repo.preload(:files)
+    action = get_by_uuid(uuid)
 
-    Files.delete_files!(action.files)
+    if action do
+      Files.delete_files!(action.files)
+    end
 
     action
     |> Repo.delete!()

@@ -32,6 +32,17 @@ defmodule MediaServerWeb.Router do
     delete("/:token", DevicesController, :delete)
   end
 
+  scope "/action", MediaServerWeb do
+    pipe_through :api
+
+    post("/", ActionController, :create)
+    get("/", ActionController, :list)
+    get("/period", ActionController, :list_from_period)
+    put("/:uuid", ActionController, :update)
+    delete("/:uuid", ActionController, :delete)
+    get("/files/:action_uuid", FilesController, :list)
+  end
+
   scope "/", MediaServerWeb do
     pipe_through :api
 
