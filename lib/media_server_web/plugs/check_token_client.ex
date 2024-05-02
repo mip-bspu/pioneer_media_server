@@ -31,5 +31,7 @@ defmodule MediaServerWeb.Plugs.CheckTokenClient do
     |> render("unauthorized.json", %{message: "Не верный токен"})
     |> halt()
 
-  defp check_device(conn, _), do: conn
+  defp check_device(conn, device), do:
+    conn
+    |> assign(:tags, Enum.map(device.tags, &(&1.name)))
 end

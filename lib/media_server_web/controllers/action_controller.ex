@@ -33,8 +33,6 @@ defmodule MediaServerWeb.ActionController do
   end
 
   def list_from_period(conn, params \\ %{}) do
-    IO.inspect(params)
-
     tags = Access.get(params, "tags", "") |> String.split([",", ", "])
     from = Access.get(params, "from") |> TimeUtil.parse_date()
     to = Access.get(params, "to") |> TimeUtil.parse_date()

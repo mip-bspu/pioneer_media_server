@@ -18,8 +18,6 @@ defmodule MediaServer.Devices.Device do
   end
 
   def changeset(conn, params \\ %{}) do
-    IO.inspect(params)
-
     conn
     |> cast(params, [:description, :token])
     |> validate_required([:token, :description])
