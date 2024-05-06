@@ -14,7 +14,7 @@ defmodule MediaServerWeb.Plugs.CheckTokenClient do
 
     if !is_nil(token) do
       conn
-      |> check_device(Devices.get_by_token(token))
+      |> check_device(Devices.get_by_token(token), token)
     else
       check_device(conn, nil)
     end
@@ -31,7 +31,8 @@ defmodule MediaServerWeb.Plugs.CheckTokenClient do
     |> render("unauthorized.json", %{message: "Не верный токен"})
     |> halt()
 
-  defp check_device(conn, device), do:
+  defp check_device(conn, device, token), do:
     conn
     |> assign(:tags, Enum.map(device.tags, &(&1.name)))
+    |> assign(:token, token)
 end

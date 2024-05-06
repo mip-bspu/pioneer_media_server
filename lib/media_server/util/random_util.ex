@@ -10,9 +10,9 @@ defmodule MediaServer.Util.RandomUtil do
     get_random_number(priorities)
     |> get_item_by_rand_num(0, priorities, items)
 
-  defp get_item_by_rand_num(rn, sum, [w], [it]), do: it
-  defp get_item_by_rand_num(rn, sum, [w | ws], [it | its]) when rn <= sum+w, do: it
-  defp get_item_by_rand_num(rn, sum, [w | ws], [it | its]), do: get_item_by_rand_num(rn, sum+w, ws, its)
+  defp get_item_by_rand_num(_rn, _sum, [_w], [it]), do: it
+  defp get_item_by_rand_num(rn, sum, [w | _ws], [it | _its]) when rn <= sum+w, do: it
+  defp get_item_by_rand_num(rn, sum, [w | ws], [_it | its]), do: get_item_by_rand_num(rn, sum+w, ws, its)
 
   defp get_random_number(priorities) do
     max = priorities |> Enum.sum()

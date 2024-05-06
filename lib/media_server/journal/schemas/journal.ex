@@ -7,6 +7,7 @@ defmodule MediaServer.Journal.Journal do
     field(:action, :string)
     field(:content_uuid, :string)
     field(:priority, :integer)
+    field(:token, :string)
 
     timestamps(type: :utc_datetime)
   end

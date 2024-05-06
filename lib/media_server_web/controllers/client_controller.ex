@@ -32,6 +32,7 @@ defmodule MediaServerWeb.ClientController do
     size = params["size"] || 6
     deep_select = params["deep_select"] || 10
 
+
     content = Actions.list_actions_before_date(conn.assigns[:tags], date)
     |> Enum.reduce([], fn(a, acc)->
       Enum.map(a.files, fn(f)->
@@ -53,7 +54,7 @@ defmodule MediaServerWeb.ClientController do
           do: deep_select, else: length_content - size)
 
         last_rows =
-          Journal.get_rows(limit)
+          Journal.get_rows(limit, conn.assigns[:token])
           |> Enum.map(fn(r)->r.content_uuid end)
 
         content
@@ -68,7 +69,7 @@ defmodule MediaServerWeb.ClientController do
       |> RandomUtil.get_num_of_rand_elems(size)
 
     selected_content
-    |> Journal.add_rows()
+    |> Journal.add_rows(conn.assigns[:token])
 
     conn
     |> put_status(200)
