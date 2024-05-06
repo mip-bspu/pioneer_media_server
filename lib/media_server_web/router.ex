@@ -46,8 +46,6 @@ defmodule MediaServerWeb.Router do
   scope "/", MediaServerWeb do
     pipe_through :api
 
-    get("/test", ClientController, :test)
-
     get("/files/:uuid/file", FilesController, :content)
   end
 
@@ -56,6 +54,7 @@ defmodule MediaServerWeb.Router do
 
     get("/", ClientController, :initialize)
     get("/schedule", ClientController, :schedule)
+    get("/content", ClientController, :content)
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

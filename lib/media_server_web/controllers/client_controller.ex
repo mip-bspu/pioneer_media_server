@@ -4,6 +4,8 @@ defmodule MediaServerWeb.ClientController do
   alias Plug.Conn
   alias MediaServer.Files
   alias MediaServer.Devices
+  alias MediaServer.Actions
+  alias MediaServer.Journal
   alias MediaServerWeb.ErrorView
 
   plug MediaServerWeb.Plugs.CheckTokenClient, [] when action in [:schedule]
@@ -27,8 +29,26 @@ defmodule MediaServerWeb.ClientController do
 
   def schedule(conn, params) do
 
-    conn
-    |> send_resp(:ok, "ok")
-  end
 
+  def content(conn, %{"uuid" => uuid, "type" => type} = _params) when type in [".mp4"] do
+    file_path = Files.file_path(uuid, type)
+
+    if File.exists?(file_path) do
+      if !Enum.empty?(Conn.get_req_header(conn, "range")) do
+        stats = File.stat!(file_path)
+        file_size = stats.size
+
+        conn
+        |> put_resp_header("Content-Type", "video/mp4")
+        |> put_resp_header("Accept-Ranges", "bytes")
+        |> put_resp_header("Content-Range", "bytes #{0}-#{file_size-1}/#{file_size}")
+        |> send_file(206, file_path)
+      else
+        conn
+        |> send_file(200, file_path)
+      end
+    else
+      raise(NotFound, "Не удалось найти контент")
+    end
+  end
 end
