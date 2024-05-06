@@ -25,8 +25,8 @@ defmodule MediaServerWeb.ActionView do
       from: action.from,
       to: action.to,
       priority: action.priority,
-      tags: TagsView.normilize_tags(action.tags),
-      files: FilesView.normilize_files(action.files)
+      tags: TagsView.normalize_tags(action.tags),
+      files: FilesView.normalize_files(action.files)
     }
   end
 end
