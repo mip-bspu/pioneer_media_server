@@ -7,6 +7,7 @@ defmodule MediaServerWeb.ClientController do
   alias MediaServer.Actions
   alias MediaServer.Journal
   alias MediaServerWeb.ErrorView
+  alias MediaServer.Util.RandomUtil
 
   plug MediaServerWeb.Plugs.CheckTokenClient, [] when action in [:schedule]
 
@@ -27,8 +28,64 @@ defmodule MediaServerWeb.ClientController do
     end
   end
 
-  def schedule(conn, params) do
+  def schedule(conn, %{ "to" => date } = params) do
+    size = params["size"] || 6
+    deep_select = params["deep_select"] || 10
 
+    content = Actions.list_actions_before_date(conn.assigns[:tags], date)
+    |> Enum.reduce([], fn(a, acc)->
+      Enum.map(a.files, fn(f)->
+        %{
+          action: a.name,
+          priority: a.priority,
+          uuid: f.uuid,
+          ext: f.extention,
+          name: f.name
+        }
+      end) ++ acc
+    end)
+
+    length_content = length(content)
+
+    content =
+      if( size < length_content) do
+        limit = if(length_content - size > deep_select,
+          do: deep_select, else: length_content - size)
+
+        last_rows =
+          Journal.get_rows(limit)
+          |> Enum.map(fn(r)->r.content_uuid end)
+
+        content
+        |> Enum.filter(fn(c)->
+          c.uuid not in last_rows
+        end)
+      else
+        content
+      end
+
+    selected_content = content
+      |> RandomUtil.get_num_of_rand_elems(size)
+
+    selected_content
+    |> Journal.add_rows()
+
+    conn
+    |> put_status(200)
+    |> render("content.json", %{content: selected_content})
+  end
+
+
+  def content(conn, %{"uuid" => uuid, "type" => type} = _params) when type in [".png"] do
+    file_path = Files.file_path(uuid, type)
+
+    if File.exists?(file_path) do
+      conn
+      |> send_file(200, file_path)
+    else
+      raise(NotFound, "Не удалось найти контент")
+    end
+  end
 
   def content(conn, %{"uuid" => uuid, "type" => type} = _params) when type in [".mp4"] do
     file_path = Files.file_path(uuid, type)

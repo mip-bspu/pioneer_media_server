@@ -176,6 +176,14 @@ defmodule MediaServer.Actions do
     |> Repo.preload(:files)
   end
 
+  def list_actions_before_date(list_tags, date) do
+    query_actions_by_tags(list_tags)
+    |> where([q], q.to > ^date)
+    |> Repo.all()
+    |> Repo.preload(:files)
+    |> Repo.preload(:tags)
+  end
+
   defp get_total_actions(list_tags) do
     query_actions_by_tags(list_tags)
     |> select([a], [a.uuid, a.id])
