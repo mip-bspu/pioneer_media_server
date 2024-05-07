@@ -19,7 +19,7 @@ defmodule MediaServer.Devices.Device do
 
   def changeset(conn, params \\ %{}) do
     conn
-    |> cast(params, [:description, :token])
+    |> cast(params, [:description, :token, :last_active])
     |> validate_required([:token, :description])
     |> validate_length(:description, min: 2, max: 50)
     |> put_assoc_if_exist(params[:tags])

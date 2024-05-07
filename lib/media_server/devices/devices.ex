@@ -31,4 +31,12 @@ defmodule MediaServer.Devices do
     device
     |> Repo.delete()
   end
+
+  def update_active(token) do
+    get_by_token(token)
+    |> Devices.Device.changeset(%{
+      last_active: Timex.now() |> DateTime.truncate(:second)
+    })
+    |> Repo.update()
+  end
 end

@@ -13,6 +13,7 @@ defmodule MediaServerWeb.DevicesView do
         description: device.description,
         token: device.token,
         tags: TagsView.normalize_tags(device.tags),
+        last_active: device.last_active
       }
     end)
 end

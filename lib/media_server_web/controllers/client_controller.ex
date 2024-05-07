@@ -71,6 +71,8 @@ defmodule MediaServerWeb.ClientController do
     selected_content
     |> Journal.add_rows(conn.assigns[:token])
 
+    Devices.update_active(conn.assigns[:token])
+
     conn
     |> put_status(200)
     |> render("content.json", %{content: selected_content})
@@ -109,4 +111,6 @@ defmodule MediaServerWeb.ClientController do
       raise(NotFound, "Не удалось найти контент")
     end
   end
+
+
 end
