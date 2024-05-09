@@ -133,7 +133,7 @@ defmodule MediaServer.Actions do
       from: from || old_action.from,
       to: to || old_action.to,
       priority: priority || old_action.priority,
-      tags: (tags && tags |> Tags.get_tags()) || old_action.tags
+      tags: (tags && tags |> Tags.get_tags()) || []
     })
     |> Repo.update()
   end

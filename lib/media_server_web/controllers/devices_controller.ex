@@ -4,6 +4,7 @@ defmodule MediaServerWeb.DevicesController do
   alias MediaServer.Devices
 
   def create(conn, %{"token" => token, "description" => description} = params \\ %{}) do
+    # TODO: check tags type device
     Devices.get_by_token(token)
     |> case do
       nil ->
