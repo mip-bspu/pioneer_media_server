@@ -16,8 +16,16 @@ defmodule MediaServerWeb.ActionController do
     })
     |> case do
       {:ok, action} ->
+        times = params["times"] && params["times"] |> Enum.map(fn(img)-> img |> String.split(";") end) || []
+
         Enum.each(params["files"] || [], fn file ->
-          Files.add_file!(file, action.id)
+          time = times |> Enum.find(fn(t)->file.filename == hd t end)
+
+          Files.add_file!(
+            file,
+            action.id,
+            if(time, do: time |> Enum.at(1) |> FormatUtil.to_integer(), else: nil)
+          )
         end)
 
         # TODO: проверка области доступа
@@ -37,7 +45,7 @@ defmodule MediaServerWeb.ActionController do
     from = Access.get(params, "from") |> TimeUtil.parse_date()
     to = Access.get(params, "to") |> TimeUtil.parse_date()
 
-    [from, to] = if(to < from, do: [to, from], else: [from, to])
+    [from, to] = if(Timex.compare(to, from) < 0, do: [to, from], else: [from, to])
 
     conn
     |> put_status(:ok)

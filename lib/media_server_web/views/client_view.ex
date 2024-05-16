@@ -7,7 +7,8 @@ defmodule MediaServerWeb.ClientView do
     Enum.map(content, fn(c)->
       %{
         uuid: c.uuid,
-        ext: c.ext
+        ext: c.ext,
+        time: c.time
       }
     end)
 end

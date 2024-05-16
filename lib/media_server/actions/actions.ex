@@ -203,10 +203,11 @@ defmodule MediaServer.Actions do
       group_by: [a.id],
       having: fragment("? @> array_agg(?) or array_agg(?)::text[] = ARRAY[NULL]", ^[nil | list_tags], t.name, t.name)
     )
+
     # from(a in Actions.Action,
-    #   distinct: true,
-    #   left_join: t in assoc(a, :tags),
-    #   where: t.name in ^list_tags or is_nil(t.name)
+    #    distinct: true,
+    #    left_join: t in assoc(a, :tags),
+    #    where: t.name in ^list_tags or is_nil(t.name)
     # )
   end
 end

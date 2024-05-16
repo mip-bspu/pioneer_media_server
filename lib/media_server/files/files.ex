@@ -33,7 +33,8 @@ defmodule MediaServer.Files do
       check_sum: data[:check_sum] || nil,
       extention: data[:extention],
       name: data[:name],
-      action_id: data[:action_id]
+      action_id: data[:action_id],
+      timelive_image: data[:time] || nil
     })
     |> Repo.insert!()
   end
@@ -44,13 +45,14 @@ defmodule MediaServer.Files do
     |> Repo.update!()
   end
 
-  def add_file!(%Plug.Upload{} = upload, action_id) do
+  def add_file!(%Plug.Upload{} = upload, action_id, time \\ nil) do
     Repo.transaction(fn ->
       file =
         %{
           name: upload.filename |> String.split(".") |> Enum.fetch!(0),
           extention: Path.extname(upload.filename),
-          action_id: action_id
+          action_id: action_id,
+          time: if(upload.content_type |> String.contains?("image"), do: time, else: nil)
         }
         |> add_file_data!()
 

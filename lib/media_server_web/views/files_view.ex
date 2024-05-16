@@ -8,11 +8,13 @@ defmodule MediaServerWeb.FilesView do
 
   def normalize_files(files), do: Enum.map(files, fn file -> file_info(file) end)
 
-  def file_info(file),
-    do: %{
+  def file_info(file) do
+    %{
       id: file.uuid,
       name: file.name,
       extention: file.extention,
-      content_type: Files.file_path(file) |> MIME.from_path()
+      content_type: Files.file_path(file) |> MIME.from_path(),
+      time: file.timelive_image
     }
+  end
 end

@@ -8,6 +8,7 @@ defmodule MediaServerWeb.ClientController do
   alias MediaServer.Journal
   alias MediaServerWeb.ErrorView
   alias MediaServer.Util.RandomUtil
+  alias MediaServer.Util.TimeUtil
 
   plug MediaServerWeb.Plugs.CheckTokenClient, [] when action in [:schedule]
 
@@ -31,7 +32,7 @@ defmodule MediaServerWeb.ClientController do
   def schedule(conn, %{ "to" => date } = params) do
     size = params["size"] || 6
     deep_select = params["deep_select"] || 10
-
+    date = date |> TimeUtil.parse_date()
 
     content = Actions.list_actions_before_date(conn.assigns[:tags], date)
     |> Enum.reduce([], fn(a, acc)->
@@ -41,7 +42,8 @@ defmodule MediaServerWeb.ClientController do
           priority: a.priority,
           uuid: f.uuid,
           ext: f.extention,
-          name: f.name
+          name: f.name,
+          time: f.timelive_image || nil
         }
       end) ++ acc
     end)
