@@ -21,6 +21,7 @@ defmodule MediaServerWeb.Router do
     put("/users/:id", AdminController, :update_user)
 
     get("/tags", TagsController, :list)
+    post("/tag", TagsController, :create)
     get("/groups", AdminController, :list_groups)
   end
 

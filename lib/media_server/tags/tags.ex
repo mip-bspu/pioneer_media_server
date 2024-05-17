@@ -6,8 +6,9 @@ defmodule MediaServer.Tags do
 
   import Ecto.Query
 
-  def get_all_tags(), do: get_filtered_tags()
+  def get_tag_by_name(name), do: Repo.get_by(Tags.Tag, name: name)
 
+  def get_all_tags(), do: get_filtered_tags()
   def get_all_my_tags() do
     from(t in Tags.Tag, where: is_nil(t.owner))
     |> Repo.all()
@@ -36,6 +37,16 @@ defmodule MediaServer.Tags do
 
     query
     |> Repo.all()
+  end
+
+  def create_tag(tag, owner\\nil) do
+    %Tags.Tag{}
+    |> Tags.Tag.changeset(%{
+      name: tag[:name],
+      owner: owner,
+      type: tag[:type] || "node"
+    })
+    |> Repo.insert()
   end
 
   def add_tags(owner, tags) do
