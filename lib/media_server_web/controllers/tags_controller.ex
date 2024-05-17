@@ -32,7 +32,7 @@ defmodule MediaServerWeb.TagsController do
         conn
         |> put_status(400)
         |> put_view(ErrorView)
-        |> render("bad_request.json", %{message: "Такой токен уже существует"})
+        |> render("bad_request.json", %{message: "Такой тэг уже существует"})
     end
   end
 end
