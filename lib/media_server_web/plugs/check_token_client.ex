@@ -9,7 +9,7 @@ defmodule MediaServerWeb.Plugs.CheckTokenClient do
 
   def call(conn, _opts) do
     token = conn
-    |> get_req_header("__pioneer-token")
+    |> get_req_header("pioneer-token")
     |> get_token()
 
     if !is_nil(token) do
