@@ -5,10 +5,19 @@ defmodule MediaServer.Devices do
   alias MediaServer.Devices
   alias MediaServer.Tags
 
+  import Ecto.Query
+
   def get_by_token(token) do
     Devices.Device
     |> Repo.get_by(token: token)
     |> Repo.preload(:tags)
+  end
+
+  def get_devices_by_tags(tags) do
+    from( d in Devices.Device,
+      left_join: t in assoc(d, :tags),
+      where: fragment("? in (?) or ? IS NULL", t.name, splice(^tags), t.name)
+    ) |> Repo.all()
   end
 
   def add_device(%{ token: token, description: description } = params) do

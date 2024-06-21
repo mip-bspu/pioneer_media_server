@@ -42,7 +42,7 @@ defmodule MediaServerWeb.ClientController do
           priority: a.priority,
           uuid: f.uuid,
           ext: f.extention,
-          name: f.name,
+          filename: f.name,
           time: f.timelive_image || nil
         }
       end) ++ acc
@@ -81,7 +81,7 @@ defmodule MediaServerWeb.ClientController do
   end
 
 
-  def content(conn, %{"uuid" => uuid, "type" => type} = _params) when type in [".png"] do
+  def content(conn, %{"uuid" => uuid, "type" => type} = _params) when type in [".png", ".jpg", ".jpeg", ".mp4"] do
     file_path = Files.file_path(uuid, type)
 
     if File.exists?(file_path) do

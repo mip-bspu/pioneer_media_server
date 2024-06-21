@@ -8,13 +8,15 @@ defmodule MediaServer.Journal.Journal do
     field(:content_uuid, :string)
     field(:priority, :integer)
     field(:token, :string)
+    field(:filename, :string)
+    field(:ext, :string)
 
     timestamps(type: :utc_datetime)
   end
 
   def changeset(conn, params \\ %{}) do
     conn
-    |> cast(params, [:action, :content_uuid, :priority])
-    |> validate_required([:action, :content_uuid, :priority])
+    |> cast(params, [:action, :content_uuid, :priority, :token, :filename, :ext])
+    |> validate_required([:action, :content_uuid, :priority, :token])
   end
 end

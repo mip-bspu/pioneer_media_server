@@ -44,6 +44,12 @@ defmodule MediaServerWeb.Router do
     get("/files/:action_uuid", FilesController, :list)
   end
 
+  scope "/journal", MediaServerWeb do
+    pipe_through :api
+
+    get("/", JournalController, :list)
+  end
+
   scope "/", MediaServerWeb do
     pipe_through :api
 
