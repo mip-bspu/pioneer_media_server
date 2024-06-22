@@ -22,7 +22,7 @@ defmodule MediaServerWeb.DevicesController do
             |> send_resp(:ok, "ok")
 
           {:error, reason} ->
-            raise(BadRequestError, "Некоректное значение: #{reason}")
+            raise(BadRequestError, "Некоректное значение: #{inspect(reason)}")
         end
       device ->
         raise(BadRequestError, "Устройство с таким токеном уже сущеествует")

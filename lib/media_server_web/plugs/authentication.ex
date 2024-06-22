@@ -2,7 +2,6 @@ defmodule MediaServerWeb.Plugs.Authentication do
   import Plug.Conn
 
   alias MediaServer.Users
-  alias MediaServerWeb.ErrorView
 
   import Phoenix.Controller
 
@@ -40,11 +39,7 @@ defmodule MediaServerWeb.Plugs.Authentication do
 
   defp check_session(conn, nil),
     do:
-      conn
-      |> put_status(401)
-      |> put_view(ErrorView)
-      |> render("unauthorized.json", %{message: "Не авторизован"})
-      |> halt()
+      raise(UnauthorizedError, "Не авторизован")
 
   defp check_session(conn, _), do: conn
 end

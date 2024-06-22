@@ -6,7 +6,6 @@ defmodule MediaServerWeb.ClientController do
   alias MediaServer.Devices
   alias MediaServer.Actions
   alias MediaServer.Journal
-  alias MediaServerWeb.ErrorView
   alias MediaServer.Util.RandomUtil
   alias MediaServer.Util.TimeUtil
 
@@ -16,16 +15,12 @@ defmodule MediaServerWeb.ClientController do
     Devices.get_by_token(token)
     |> case do
       nil ->
-        conn
-        |> put_status(401)
-        |> put_view(ErrorView)
-        |> render("unauthorized.json", %{message: "Неверный токен"})
-        |> halt()
-      _device ->
+        raise(UnauthorizedError, "Неверный токен")
 
+      _device ->
         conn
-        |> put_status(200)
-        |> json(%{message: "ok"})
+        |> send_resp(:ok, "ok")
+
     end
   end
 
@@ -113,6 +108,4 @@ defmodule MediaServerWeb.ClientController do
       raise(NotFound, "Не удалось найти контент")
     end
   end
-
-
 end

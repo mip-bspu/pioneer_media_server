@@ -3,7 +3,6 @@ defmodule MediaServerWeb.Plugs.CheckTokenClient do
   import Phoenix.Controller
 
   alias MediaServer.Devices
-  alias MediaServerWeb.ErrorView
 
   def init(opts \\ []), do: opts
 
@@ -25,11 +24,7 @@ defmodule MediaServerWeb.Plugs.CheckTokenClient do
 
   defp check_device(conn, nil),
   do:
-    conn
-    |> put_status(401)
-    |> put_view(ErrorView)
-    |> render("unauthorized.json", %{message: "Не верный токен"})
-    |> halt()
+    raise(UnauthorizedError, "Не верный токен")
 
   defp check_device(conn, device, token), do:
     conn

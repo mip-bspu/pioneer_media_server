@@ -2,7 +2,6 @@ defmodule MediaServerWeb.TagsController do
   use MediaServerWeb, :controller
 
   alias MediaServer.Tags
-  alias MediaServerWeb.ErrorView
 
   plug MediaServerWeb.Plugs.Authentication, ["ADMIN"] when action in [:list]
 
@@ -28,11 +27,10 @@ defmodule MediaServerWeb.TagsController do
         conn
         |> put_status(200)
         |> render("tag.json", %{tag: tag})
+
       _tag ->
-        conn
-        |> put_status(400)
-        |> put_view(ErrorView)
-        |> render("bad_request.json", %{message: "Такой тэг уже существует"})
+        raise(BadRequestError, "Такой тэг уже существует")
+
     end
   end
 end

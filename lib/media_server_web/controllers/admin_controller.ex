@@ -73,7 +73,7 @@ defmodule MediaServerWeb.AdminController do
       cond do
         val in ["0", "false", false] -> false
         val in ["1", "true", true] -> true
-        true -> raise(BadRequestError, "Некоректное значение: #{to_string(value)}")
+        true -> raise(BadRequestError, "Некоректное значение: #{to_string(val)}")
       end
 
     conn
