@@ -48,7 +48,7 @@ defmodule MediaServerWeb.DevicesController do
     end
   end
 
-  def list(conn, _params \\ %{}) do
+  def list(conn, _params) do
     user_id = conn
       |> fetch_session()
       |> get_session(:user_id)
@@ -61,5 +61,19 @@ defmodule MediaServerWeb.DevicesController do
     conn
     |> put_status(200)
     |> render("devices.json", %{devices: devices})
+  end
+
+  def min_list(conn, _params) do
+    user_id = conn
+      |> fetch_session()
+      |> get_session(:user_id)
+
+    devices = Users.get_by_id(user_id)
+      |> Users.get_tags_of_user_by_type("device")
+      |> Devices.get_devices_by_tags()
+
+    conn
+    |> put_status(200)
+    |> render("min_devices.json", %{devices: devices})
   end
 end

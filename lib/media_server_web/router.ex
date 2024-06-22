@@ -30,6 +30,7 @@ defmodule MediaServerWeb.Router do
 
     post("/", DevicesController, :create)
     get("/", DevicesController, :list)
+    get("/min", DevicesController, :min_list)
     delete("/:token", DevicesController, :delete)
   end
 

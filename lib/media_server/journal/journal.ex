@@ -18,7 +18,7 @@ defmodule MediaServer.Journal do
             priority: row[:priority],
             inserted_at: Timex.now() |> DateTime.truncate(:second),
             updated_at: Timex.now() |> DateTime.truncate(:second),
-            token: token,
+            token: token
           }
       end)
 

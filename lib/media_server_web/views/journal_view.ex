@@ -1,12 +1,17 @@
 defmodule MediaServerWeb.JournalView do
   use MediaServerWeb, :view
 
-  def render("journal.json", %{ content: items, page: page, page_size: size, total: total}), do:
+  def render("journal.json", %{
+      content: items,
+      page: page,
+      page_size: size,
+      total: total,
+    }), do:
     %{
       content: normalize_journal(items),
       page: page,
       page_size: size,
-      total: total
+      total: total,
     }
 
 
@@ -17,7 +22,6 @@ defmodule MediaServerWeb.JournalView do
         filename: i.filename || "",
         ext: i.ext,
         action: i.action,
-        token: i.token,
         time: i.inserted_at
       }
     end)
