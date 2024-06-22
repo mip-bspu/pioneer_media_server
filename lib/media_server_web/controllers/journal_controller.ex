@@ -16,15 +16,11 @@ defmodule MediaServerWeb.JournalController do
     page = params["page"] |> FormatUtil.to_integer() || 0
     page_size = params["page_size"] |> FormatUtil.to_integer() || 10
 
-    {journal, count} = user.tags
-      |> Stream.filter(&(&1.type == "device"))
-      |> Stream.map(&(&1.name))
-      |> Enum.to_list()
+    {journal, count} = user
+      |> Users.get_tags_of_user_by_type("device")
       |> Devices.get_devices_by_tags()
       |> Enum.map(&(&1.token))
       |> Journal.get_page_rows(page_size, page)
-
-    IO.inspect(journal)
 
     conn
     |> put_status(200)

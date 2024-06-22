@@ -30,12 +30,6 @@ defmodule MediaServer.Devices do
     |> Repo.insert()
   end
 
-  def list_devices() do
-    Devices.Device
-    |> Repo.all()
-    |> Repo.preload(:tags)
-  end
-
   def delete_device(%Devices.Device{} = device) do
     device
     |> Repo.delete()
