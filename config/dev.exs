@@ -22,7 +22,7 @@ config :media_server, MediaServerWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 3333],
   check_origin: false,
   code_reloader: true,
-  debug_errors: true,
+  debug_errors: false,
   secret_key_base: "HSJjJRg5dqsyXiE6wXLMAS+cKk4M/jGBjntf8SEBYxjkj+b+qKwWIs8DJZLn206e",
   watchers: []
 

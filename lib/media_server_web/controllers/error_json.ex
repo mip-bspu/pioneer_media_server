@@ -9,7 +9,17 @@ defmodule MediaServerWeb.ErrorJSON do
   # By default, Phoenix returns the status message from
   # the template name. For example, "404.json" becomes
   # "Not Found".
-  def render(template, _assigns) do
-    %{errors: %{detail: Phoenix.Controller.status_message_from_template(template)}}
+  def render(template, assigns) do
+    %{errors: %{
+      detail: Phoenix.Controller.status_message_from_template(template),
+      message: get_message(assigns.reason)
+    }}
+  end
+
+  defp get_message(error) do
+    case error do
+      %{message: message} -> message
+      message -> message
+    end
   end
 end

@@ -27,6 +27,7 @@ defmodule MediaServer.Actions.Action do
     item
     |> cast(params, [:name, :date_create, :from, :to, :priority, :uuid])
     |> validate_required([:uuid, :name, :from, :to, :priority])
+    |> validate_length(:name, min: 3, max: 60)
     |> validate_inclusion(:priority, 1..4)
     |> unique_constraint(:uuid)
     |> put_assoc_if_exist(params[:tags])

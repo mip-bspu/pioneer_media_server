@@ -3,7 +3,6 @@ defmodule MediaServerWeb.AdminController do
 
   alias MediaServer.Admin
   alias MediaServer.Users
-  alias MediaServerWeb.ErrorView
 
   plug MediaServerWeb.Plugs.Authentication, ["ADMIN"]
 
@@ -32,19 +31,19 @@ defmodule MediaServerWeb.AdminController do
         |> put_status(200)
         |> render("user.json", %{user: user})
 
-      {:error, reason} ->
-        raise(BadRequestError, "Не удалось обновить данные: #{reason}")
+      {:error, _reason} ->
+        raise(BadRequestError, "Не удалось обновить данные")
     end
   end
 
-  def create_user(conn, %{"login" => login, "password" => password, "groups" => groups} = params) do
+  def create_user(conn, %{ "login" => login } = params) do
     Users.get_by_login(login)
     |> case do
       nil ->
         Users.add_user(%{
           login: login,
-          password: password,
-          groups: groups,
+          password: params["password"] || "",
+          groups: params["groups"],
           tags: params["tags"] || []
         })
         |> case do
@@ -53,18 +52,19 @@ defmodule MediaServerWeb.AdminController do
             |> put_status(200)
             |> render("user.json", %{user: user})
 
-          {:error, reason} ->
-            raise(BadRequestError, "Некоректное значение #{reason}")
+          {:error, _reason} ->
+            raise(BadRequestError, "Некоректное значение для одного из введённых полей")
         end
 
       _user ->
-        conn
-        |> put_status(400)
-        |> put_view(ErrorView)
-        |> render("bad_request.json", %{message: "Пользователь с таким логином уже существует"})
-        |> halt()
+        raise(BadRequestError, "Пользователь с таким логином уже существует")
+
     end
   end
+
+  def create_user(conn, _params), do:
+    raise(BadRequestError, "Необходимо ввести логин")
+
 
   def set_active(conn, %{"active" => val, "id" => user_id} = _params) do
     user_id = user_id |> String.to_integer()
@@ -73,17 +73,13 @@ defmodule MediaServerWeb.AdminController do
       cond do
         val in ["0", "false", false] -> false
         val in ["1", "true", true] -> true
-        true -> raise(BadRequestError, "Некоректное значение")
+        true -> raise(BadRequestError, "Некоректное значение: #{to_string(value)}")
       end
 
-    try do
-      conn
-      |> put_status(200)
-      |> render("user.json", %{
-        user: Admin.set_active_user!(user_id, value)
-      })
-    rescue
-      reason -> raise(BadRequestError, "Некоректное значение: #{reason}")
-    end
+    conn
+    |> put_status(200)
+    |> render("user.json", %{
+      user: Admin.set_active_user!(user_id, value)
+    })
   end
 end

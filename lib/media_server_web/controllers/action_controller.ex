@@ -3,10 +3,24 @@ defmodule MediaServerWeb.ActionController do
 
   alias MediaServer.Actions
   alias MediaServer.Files
+  alias MediaServer.Users
   alias MediaServer.Util.FormatUtil
   alias MediaServer.Util.TimeUtil
 
   def create(conn, params \\ %{}) do
+    if is_list(params["tags"]) do
+      user = conn
+          |> fetch_session()
+          |> get_session(:user_id)
+          |> Users.get_by_id()
+
+      tags = user.tags -- Enum.map(params["tags"], &(&1.name))
+
+      if length(tags) > 0 do
+        raise( BadRequestError, "Неверные данные" )
+      end
+    end
+
     Actions.add_action(%{
       name: params["name"],
       from: params["from"] |> TimeUtil.parse_date(),
@@ -28,15 +42,15 @@ defmodule MediaServerWeb.ActionController do
           )
         end)
 
-        # TODO: проверка области доступа
         conn
         |> put_status(:ok)
         |> render("action.json", %{
           action: action.uuid |> Actions.get_by_uuid()
         })
 
-      {:error, reason} ->
-        raise(BadRequestError, "Неверные данные: #{reason}")
+      {:error, _reason} ->
+        raise( BadRequestError, "Неверные данные" )
+
     end
   end
 
@@ -95,8 +109,8 @@ defmodule MediaServerWeb.ActionController do
           action: action.uuid |> Actions.get_by_uuid()
         })
 
-      {:error, reason} ->
-        raise(BadRequestError, "Неверные данные: #{reason}")
+      {:error, _reason} ->
+        raise(BadRequestError, "Неверные данные")
     end
   end
 
