@@ -14,10 +14,10 @@ defmodule MediaServerWeb.ActionController do
           |> get_session(:user_id)
           |> Users.get_by_id()
 
-      tags = user.tags -- Enum.map(params["tags"], &(&1.name))
+      tags = params["tags"] -- Enum.map(user.tags, &(&1.name))
 
       if length(tags) > 0 do
-        raise( BadRequestError, "Неверные данные" )
+        raise( BadRequestError, "Не допустимые тэги" )
       end
     end
 
