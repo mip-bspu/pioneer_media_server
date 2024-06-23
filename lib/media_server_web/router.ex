@@ -54,6 +54,7 @@ defmodule MediaServerWeb.Router do
   scope "/", MediaServerWeb do
     pipe_through :api
 
+    get("/setup", ServerController, :setup)
     get("/files/:uuid/file", FilesController, :content)
   end
 

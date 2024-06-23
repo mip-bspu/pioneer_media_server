@@ -7,6 +7,9 @@ defmodule MediaServerWeb.ActionController do
   alias MediaServer.Util.FormatUtil
   alias MediaServer.Util.TimeUtil
 
+  @image_formats Application.compile_env(:media_server, :image_formats)
+  @video_formats Application.compile_env(:media_server, :video_formats)
+
   def create(conn, params \\ %{}) do
     if is_list(params["tags"]) do
       user = conn
@@ -33,13 +36,17 @@ defmodule MediaServerWeb.ActionController do
         times = params["times"] && params["times"] |> Enum.map(fn(img)-> img |> String.split(";") end) || []
 
         Enum.each(params["files"] || [], fn file ->
-          time = times |> Enum.find(fn(t)->file.filename == hd t end)
+          ext = Path.extname(file.filename)
 
-          Files.add_file!(
-            file,
-            action.id,
-            if(time, do: time |> Enum.at(1) |> FormatUtil.to_integer(), else: nil)
-          )
+          if ext in @image_formats || ext in @video_formats do
+            time = times |> Enum.find(fn(t)->file.filename == hd t end)
+
+            Files.add_file!(
+              file,
+              action.id,
+              if(time, do: time |> Enum.at(1) |> FormatUtil.to_integer(), else: nil)
+            )
+          end
         end)
 
         conn

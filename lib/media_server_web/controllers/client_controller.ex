@@ -11,6 +11,9 @@ defmodule MediaServerWeb.ClientController do
 
   plug MediaServerWeb.Plugs.CheckTokenClient, [] when action in [:schedule]
 
+  @image_formats Application.compile_env(:media_server, :image_formats)
+  @video_formats Application.compile_env(:media_server, :video_formats)
+
   def initialize(conn, %{ "token" => token } = _params) do
     Devices.get_by_token(token)
     |> case do
@@ -30,23 +33,23 @@ defmodule MediaServerWeb.ClientController do
     date = date |> TimeUtil.parse_date()
 
     content = Actions.list_actions_before_date(conn.assigns[:tags], date)
-    |> Enum.reduce([], fn(a, acc)->
-      Enum.map(a.files, fn(f)->
-        %{
-          action: a.name,
-          priority: a.priority,
-          uuid: f.uuid,
-          ext: f.extention,
-          filename: f.name,
-          time: f.timelive_image || nil
-        }
-      end) ++ acc
-    end)
+      |> Enum.reduce([], fn(a, acc)->
+        Enum.map(a.files, fn(f)->
+          %{
+            action: a.name,
+            priority: a.priority,
+            uuid: f.uuid,
+            ext: f.extention,
+            filename: f.name,
+            time: f.timelive_image || nil
+          }
+        end) ++ acc
+      end)
 
     length_content = length(content)
 
     content =
-      if( size < length_content) do
+      if( size < length_content ) do
         limit = if(length_content - size > deep_select,
           do: deep_select, else: length_content - size)
 
@@ -55,9 +58,9 @@ defmodule MediaServerWeb.ClientController do
           |> Enum.map(fn(r)->r.content_uuid end)
 
         content
-        |> Enum.filter(fn(c)->
-          c.uuid not in last_rows
-        end)
+          |> Enum.filter(fn(c)->
+            c.uuid not in last_rows
+          end)
       else
         content
       end
@@ -76,7 +79,7 @@ defmodule MediaServerWeb.ClientController do
   end
 
 
-  def content(conn, %{"uuid" => uuid, "type" => type} = _params) when type in [".png", ".jpg", ".jpeg", ".mp4"] do
+  def content(conn, %{"uuid" => uuid, "type" => type} = _params) when type in @image_formats do
     file_path = Files.file_path(uuid, type)
 
     if File.exists?(file_path) do
@@ -87,7 +90,7 @@ defmodule MediaServerWeb.ClientController do
     end
   end
 
-  def content(conn, %{"uuid" => uuid, "type" => type} = _params) when type in [".mp4"] do
+  def content(conn, %{"uuid" => uuid, "type" => type} = _params) when type in @video_formats do
     file_path = Files.file_path(uuid, type)
 
     if File.exists?(file_path) do
@@ -96,7 +99,7 @@ defmodule MediaServerWeb.ClientController do
         file_size = stats.size
 
         conn
-        |> put_resp_header("Content-Type", "video/mp4")
+        |> put_resp_header("Content-Type", "video/#{String.slice(type, 1..-1)}")
         |> put_resp_header("Accept-Ranges", "bytes")
         |> put_resp_header("Content-Range", "bytes #{0}-#{file_size-1}/#{file_size}")
         |> send_file(206, file_path)
@@ -108,4 +111,7 @@ defmodule MediaServerWeb.ClientController do
       raise(NotFound, "Не удалось найти контент")
     end
   end
+
+  def content(_conn, _params), do:
+    raise(NotFound, "Не допустимый формат контента")
 end
