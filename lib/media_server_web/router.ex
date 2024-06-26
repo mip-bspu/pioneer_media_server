@@ -38,10 +38,11 @@ defmodule MediaServerWeb.Router do
     pipe_through :api
 
     post("/", ActionController, :create)
-    get("/", ActionController, :list)
-    get("/period", ActionController, :list_from_period)
     put("/:uuid", ActionController, :update)
     delete("/:uuid", ActionController, :delete)
+
+    get("/", ActionController, :list)
+    get("/period", ActionController, :list_from_period)
     get("/files/:action_uuid", FilesController, :list)
   end
 
