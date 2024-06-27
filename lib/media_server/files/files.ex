@@ -48,7 +48,7 @@ defmodule MediaServer.Files do
     |> Repo.update!()
   end
 
-  def add_file!(%Plug.Upload{} = upload, action_id, time \\ nil) do
+  def add_file!(%Plug.Upload{} = upload, action_id, time \\ 10) do
     Repo.transaction(fn ->
       file =
         %{
@@ -67,18 +67,27 @@ defmodule MediaServer.Files do
     end)
   end
 
-  def add_files!(action, times, files) do
+  def add_files!(action, files, times \\ nil) do
     Enum.each(files || [], fn file ->
       ext = Path.extname(file.filename)
 
       if ext in @image_formats || ext in @video_formats do
-        time = times |> Enum.find(fn(t)->file.filename == hd t end)
 
-        Files.add_file!(
-          file,
-          action.id,
-          if(time, do: time |> Enum.at(1) |> FormatUtil.to_integer(), else: nil)
-        )
+        if is_list(times) do
+          time = times
+            |> Enum.find(fn(t)->file.filename == hd t end)
+            |> case do
+              nil -> nil
+              time -> time |> Enum.at(1) |> FormatUtil.to_integer()
+            end
+
+          Files.add_file!(file, action.id, time)
+        else
+          Files.add_file!(file, action.id)
+        end
+      end
+    end)
+  end
       end
     end)
   end

@@ -32,7 +32,7 @@ defmodule MediaServerWeb.ActionController do
       {:ok, action} ->
         times = params["times"] && params["times"] |> Enum.map(fn(img)-> img |> String.split(";") end) || []
 
-        Files.add_files!(action, times, params["files"])
+        Files.add_files!(action, params["files"], times)
 
         conn
         |> put_status(:ok)
@@ -59,9 +59,7 @@ defmodule MediaServerWeb.ActionController do
     })
     |> case do
       {:ok, action} ->
-        times = params["times"] && params["times"] |> Enum.map(fn(img)-> img |> String.split(";") end) || []
-
-        Files.add_files!(action, times, params["append_files"])
+        Files.add_files!(action, params["append_files"])
 
         if is_list(params["delete_files"]) && length(params["delete_files"]) > 0 do
           Files.delete_files!(action, params["delete_files"])
