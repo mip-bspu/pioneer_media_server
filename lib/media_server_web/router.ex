@@ -40,6 +40,7 @@ defmodule MediaServerWeb.Router do
     post("/", ActionController, :create)
     put("/:uuid", ActionController, :update)
     delete("/:uuid", ActionController, :delete)
+    put("/:uuid/files", ActionController, :update_files_data)
 
     get("/", ActionController, :list)
     get("/period", ActionController, :list_from_period)

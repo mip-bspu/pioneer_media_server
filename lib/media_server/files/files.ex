@@ -42,10 +42,23 @@ defmodule MediaServer.Files do
     |> Repo.insert!()
   end
 
-  def update_file_data!(%Files.File{} = old_file_data, new_file_data) do
-    old_file_data
-    |> Files.File.changeset(new_file_data)
+  def update_file_data!(%Files.File{} = old, new) do
+    old
+    |> Files.File.changeset(new)
     |> Repo.update!()
+  end
+
+  def update_files!(action, %{ times: times }) do
+    action.files
+    |> Enum.each(fn file ->
+      time = Map.get(Enum.find(times, &(&1.uuid == file.uuid)), :time, nil)
+
+      if not is_nil(time) do
+        update_file_data!(file, %{
+          timelive_image:  time |> FormatUtil.to_integer()
+        })
+      end
+    end)
   end
 
   def add_file!(%Plug.Upload{} = upload, action_id, time \\ 10) do
@@ -85,9 +98,6 @@ defmodule MediaServer.Files do
         else
           Files.add_file!(file, action.id)
         end
-      end
-    end)
-  end
       end
     end)
   end

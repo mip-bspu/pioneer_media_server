@@ -91,6 +91,21 @@ defmodule MediaServerWeb.ActionController do
     end
   end
 
+  def update_files_data(conn, %{ "uuid" => uuid } = params) do
+    action = uuid
+      |> Actions.get_by_uuid()
+      |> if_exists()
+
+    times = (params["times"] || []) |> Enum.map(&(%{uuid: &1["uuid"], time: &1["time"]}))
+    Files.update_files!(action, %{ times: times })
+
+    conn
+    |> put_status(:ok)
+    |> render("action.json", %{
+      action: action.uuid |> Actions.get_by_uuid()
+    })
+  end
+
   def list_from_period(conn, params \\ %{}) do
     tags = Access.get(params, "tags", "") |> String.split([",", ", "])
     from = Access.get(params, "from") |> TimeUtil.parse_date()
