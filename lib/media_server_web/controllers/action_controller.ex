@@ -25,7 +25,7 @@ defmodule MediaServerWeb.ActionController do
       name: params["name"],
       from: params["from"] |> TimeUtil.parse_date(),
       to: params["to"] |> TimeUtil.parse_date(),
-      priority: (params["priority"] || 0) |> FormatUtil.to_integer(),
+      priority: params["priority"] |> FormatUtil.to_integer(1),
       tags: params["tags"]
     })
     |> case do
@@ -54,7 +54,7 @@ defmodule MediaServerWeb.ActionController do
       name: params["name"],
       from: params["from"],
       to: params["to"],
-      priority: params["priority"] && params["priority"] |> FormatUtil.to_integer(),
+      priority: params["priority"] && params["priority"] |> FormatUtil.to_integer(1),
       tags: params["tags"]
     })
     |> case do

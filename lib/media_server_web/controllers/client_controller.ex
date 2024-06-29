@@ -32,19 +32,13 @@ defmodule MediaServerWeb.ClientController do
     deep_select = params["deep_select"] || 10
     date = date |> TimeUtil.parse_date()
 
-    content = Actions.list_actions_before_date(conn.assigns[:tags], date)
-      |> Enum.reduce([], fn(a, acc)->
-        Enum.map(a.files, fn(f)->
-          %{
-            action: a.name,
-            priority: a.priority,
-            uuid: f.uuid,
-            ext: f.extention,
-            filename: f.name,
-            time: f.timelive_image || nil
-          }
-        end) ++ acc
-      end)
+    content = Actions.list_actions_before_data_with_emergency_priority(conn.assigns[:tags], date)
+      |> transformToContent
+
+    content = if length(content) == 0 do
+        Actions.list_actions_before_date(conn.assigns[:tags], date)
+        |> transformToContent
+      else content end
 
     length_content = length(content)
 
@@ -78,6 +72,21 @@ defmodule MediaServerWeb.ClientController do
     |> render("content.json", %{content: selected_content})
   end
 
+  defp transformToContent(actions) do
+    actions
+    |> Enum.reduce([], fn(a, acc)->
+        Enum.map(a.files, fn(f)->
+          %{
+            action: a.name,
+            priority: a.priority,
+            uuid: f.uuid,
+            ext: f.extention,
+            filename: f.name,
+            time: f.timelive_image || nil
+          }
+        end) ++ acc
+      end)
+  end
 
   def content(conn, %{"uuid" => uuid, "type" => type} = _params) when type in @image_formats do
     file_path = Files.file_path(uuid, type)
@@ -99,7 +108,7 @@ defmodule MediaServerWeb.ClientController do
         file_size = stats.size
 
         conn
-        |> put_resp_header("Content-Type", "video/#{String.slice(type, 1..-1)}")
+        |> put_resp_header("Content-Type", "video/#{String.slice(type, 1..-1//1)}")
         |> put_resp_header("Accept-Ranges", "bytes")
         |> put_resp_header("Content-Range", "bytes #{0}-#{file_size-1}/#{file_size}")
         |> send_file(206, file_path)

@@ -111,7 +111,7 @@ defmodule MediaServer.Actions do
       uuid: params[:uuid] || Ecto.UUID.generate(),
       from: from,
       to: to,
-      priority: params[:priority] || 0,
+      priority: params[:priority] || 1,
       tags: params[:tags] && Tags.get_tags(params[:tags])
     })
     |> Repo.insert()
@@ -174,6 +174,15 @@ defmodule MediaServer.Actions do
     |> Repo.all()
     |> Repo.preload(:tags)
     |> Repo.preload(:files)
+  end
+
+  def list_actions_before_data_with_emergency_priority(list_tags, date) do
+    query_actions_by_tags(list_tags)
+    |> where([a], a.to > ^date)
+    |> where([a], a.priority == 4)
+    |> Repo.all()
+    |> Repo.preload(:files)
+    |> Repo.preload(:tags)
   end
 
   def list_actions_before_date(list_tags, date) do
