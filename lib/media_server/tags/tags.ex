@@ -8,6 +8,8 @@ defmodule MediaServer.Tags do
 
   def get_tag_by_name(name), do: Repo.get_by(Tags.Tag, name: name)
 
+  def get_tag_by_id(id), do: Repo.get_by(Tags.Tag, id: id)
+
   def get_all_tags(), do: get_filtered_tags()
   def get_all_my_tags() do
     from(t in Tags.Tag, where: is_nil(t.owner))
@@ -48,6 +50,9 @@ defmodule MediaServer.Tags do
     })
     |> Repo.insert()
   end
+
+  def delete_tag!(%Tags.Tag{} = tag),
+    do: tag |> Repo.delete!()
 
   def add_tags(owner, tags) do
     Enum.each(tags, fn tag ->

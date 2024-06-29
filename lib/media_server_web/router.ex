@@ -22,6 +22,7 @@ defmodule MediaServerWeb.Router do
 
     get("/tags", TagsController, :list)
     post("/tag", TagsController, :create)
+    delete("/tag/:id", TagsController, :delete)
     get("/groups", AdminController, :list_groups)
   end
 

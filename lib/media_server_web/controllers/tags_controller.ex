@@ -22,15 +22,35 @@ defmodule MediaServerWeb.TagsController do
   def create(conn, %{"name" => name, "type" => type} = _params) do
     case Tags.get_tag_by_name(name) do
       nil ->
-        { :ok, tag } = Tags.create_tag(%{name: name, type: type})
+        Tags.create_tag(%{name: name, type: type})
+        |> case do
+          {:ok, tag} ->
+            conn
+            |> put_status(200)
+            |> render("tag.json", %{tag: tag})
 
-        conn
-        |> put_status(200)
-        |> render("tag.json", %{tag: tag})
+          {:error, reason} ->
+            IO.inspect(reason)
+            raise(BadRequestError, "Неверные данные")
+        end
 
       _tag ->
         raise(BadRequestError, "Такой тэг уже существует")
 
+    end
+  end
+
+  def delete(conn, %{"id" => id} = _params) do
+    Tags.get_tag_by_id(id)
+    |> case do
+      nil ->
+        raise(BadRequestError, "Тэг не найден")
+
+      tag ->
+        Tags.delete_tag!(tag)
+
+        conn
+        |> send_resp(:ok, "ok")
     end
   end
 end
