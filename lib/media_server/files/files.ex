@@ -51,11 +51,11 @@ defmodule MediaServer.Files do
   def update_files!(action, %{ times: times }) do
     action.files
     |> Enum.each(fn file ->
-      time = Map.get(Enum.find(times, &(&1.uuid == file.uuid)), :time, nil)
+      entry = Enum.find(times, &(&1.uuid == file.uuid))
 
-      if not is_nil(time) do
+      if not is_nil(entry) do
         update_file_data!(file, %{
-          timelive_image:  time |> FormatUtil.to_integer()
+          timelive_image:  entry.time |> FormatUtil.to_integer()
         })
       end
     end)
