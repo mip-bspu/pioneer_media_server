@@ -4,6 +4,7 @@ defmodule MediaServer.Devices do
   alias MediaServer.Repo
   alias MediaServer.Devices
   alias MediaServer.Tags
+  alias MediaServer.Users
 
   import Ecto.Query
 
@@ -27,6 +28,19 @@ defmodule MediaServer.Devices do
       where: fragment("? in (?) or ? IS NULL", t.name, splice(^tags), t.name),
       distinct: true
     ) |> Repo.all()
+  end
+
+  def get_devices_by_role(user) do
+    if Users.is_admin(user) do
+      Tags.get_filtered_tags(%{list_types: ["device"]})
+    else
+      user
+      |> Users.get_tags_of_user_by_type("device")
+    end
+    |> Stream.map(&(&1.name))
+    |> Enum.to_list()
+    |> get_devices_by_tags()
+    |> Repo.preload(:tags)
   end
 
   def add_device(%{ token: token, description: description } = params) do

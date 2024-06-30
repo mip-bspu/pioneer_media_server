@@ -18,6 +18,7 @@ defmodule MediaServerWeb.DevicesView do
     devices
     |> Enum.map(fn device ->
       %{
+        id: device.id,
         description: device.description,
         token: device.token,
         tags: TagsView.normalize_tags(device.tags),

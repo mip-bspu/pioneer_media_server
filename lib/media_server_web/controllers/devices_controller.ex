@@ -30,14 +30,14 @@ defmodule MediaServerWeb.DevicesController do
     end
   end
 
-  def update(conn, %{"token" => token } = params) do
-    case Devices.get_by_token(token) do
+  def update(conn, %{"id" => id} = params) do
+    case Devices.get_by_id(id) do
       nil ->
         raise(BadRequestError, "Не правильный токен")
 
       device ->
         Devices.update_device(device, %{
-          token: params["new_token"],
+          token: params["token"],
           description: params["description"],
           tags: params["tags"]
         })
@@ -53,8 +53,8 @@ defmodule MediaServerWeb.DevicesController do
     end
   end
 
-  def delete(conn, %{"token" => token} = params \\ %{}) do
-    case Devices.get_by_token(token) do
+  def delete(conn, %{"id" => id} = params \\ %{}) do
+    case Devices.get_by_id(id) do
       nil ->
         raise(BadRequestError, "Не правильный токен")
 
@@ -79,7 +79,7 @@ defmodule MediaServerWeb.DevicesController do
 
     devices =
       Users.get_by_id(user_id)
-      |> get_devices_by_role
+      |> Devices.get_devices_by_role
 
     conn
     |> put_status(200)
@@ -93,23 +93,10 @@ defmodule MediaServerWeb.DevicesController do
 
     devices =
       Users.get_by_id(user_id)
-      |> get_devices_by_role
+      |> Devices.get_devices_by_role
 
     conn
     |> put_status(200)
     |> render("min_devices.json", %{devices: devices})
-  end
-
-  defp get_devices_by_role(user) do
-    if Users.is_admin(user) do
-      Tags.get_filtered_tags(%{list_types: ["device"]})
-    else
-      user
-      |> Users.get_tags_of_user_by_type("device")
-    end
-    |> Stream.map(&(&1.name))
-    |> Enum.to_list()
-    |> Devices.get_devices_by_tags()
-    |> Repo.preload(:tags)
   end
 end

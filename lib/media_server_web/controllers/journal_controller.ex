@@ -11,13 +11,12 @@ defmodule MediaServerWeb.JournalController do
       |> fetch_session()
       |> get_session(:user_id)
 
-    page = params["page"] |> FormatUtil.to_integer() || 0
-    page_size = params["page_size"] |> FormatUtil.to_integer() || 10
-    device_id = params["device_id"] |> FormatUtil.to_integer()
+    page = params["page"] |> FormatUtil.to_integer(0)
+    page_size = params["page_size"] |> FormatUtil.to_integer(10)
+    device_id = params["device_id"] |> FormatUtil.to_integer(nil)
 
     devices = Users.get_by_id(user_id)
-      |> Users.get_tags_of_user_by_type("device")
-      |> Devices.get_devices_by_tags()
+      |> Devices.get_devices_by_role
 
     device = Enum.find(devices, &(&1.id == device_id))
 
