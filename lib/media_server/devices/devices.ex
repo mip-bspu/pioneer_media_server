@@ -24,7 +24,8 @@ defmodule MediaServer.Devices do
 
     from( d in Devices.Device,
       left_join: t in assoc(d, :tags),
-      where: fragment("? in (?) or ? IS NULL", t.name, splice(^tags), t.name)
+      where: fragment("? in (?) or ? IS NULL", t.name, splice(^tags), t.name),
+      distinct: true
     ) |> Repo.all()
   end
 
@@ -41,6 +42,16 @@ defmodule MediaServer.Devices do
   def delete_device(%Devices.Device{} = device) do
     device
     |> Repo.delete()
+  end
+
+  def update_device(%Devices.Device{} = device, params) do
+    device
+    |> Devices.Device.changeset(%{
+      token: params[:token] || device.token,
+      description: params[:description] || device.description,
+      tags: (params[:tags] || []) |> Tags.get_tags()
+    })
+    |> Repo.update()
   end
 
   def update_active(token) do

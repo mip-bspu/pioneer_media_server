@@ -44,10 +44,13 @@ defmodule MediaServer.Users do
     |> Repo.update()
   end
 
+  def is_admin(%Users.User{} = user), do:
+    not (user.groups
+      |> Enum.find(fn g-> g.name == "ADMIN" end)
+      |> is_nil)
+
   def get_tags_of_user_by_type(user, type) do
     user.tags
-    |> Stream.filter(&(&1.type == type))
-    |> Stream.map(&(&1.name))
-    |> Enum.to_list()
+    |> Enum.filter(&(&1.type == type))
   end
 end

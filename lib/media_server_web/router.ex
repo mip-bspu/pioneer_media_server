@@ -29,10 +29,11 @@ defmodule MediaServerWeb.Router do
   scope "/devices", MediaServerWeb do
     pipe_through :api
 
-    post("/", DevicesController, :create)
     get("/", DevicesController, :list)
     get("/min", DevicesController, :min_list)
+    post("/", DevicesController, :create)
     delete("/:token", DevicesController, :delete)
+    put("/:token", DevicesController, :update)
   end
 
   scope "/action", MediaServerWeb do
