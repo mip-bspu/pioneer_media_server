@@ -29,8 +29,7 @@ defmodule MediaServerWeb.TagsController do
             |> put_status(200)
             |> render("tag.json", %{tag: tag})
 
-          {:error, reason} ->
-            IO.inspect(reason)
+          {:error, _reason} ->
             raise(BadRequestError, "Неверные данные")
         end
 

@@ -13,6 +13,7 @@ defmodule MediaServer.Tags.Tag do
   def changeset(item, params \\ %{}) do
     item
     |> cast(params, [:name, :owner, :type])
+    |> validate_required([:name])
     |> validate_length(:name, min: 3, max: 60)
     |> unique_constraint(:name)
   end
