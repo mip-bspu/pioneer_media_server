@@ -6,8 +6,10 @@ defmodule MediaServerWeb.DevicesController do
   alias MediaServer.Tags
   alias MediaServer.Repo
 
+  plug MediaServerWeb.Plugs.Authentication, ["ADMIN"] when action in [:create, :update, :delete]
+  plug MediaServerWeb.Plugs.Authentication, ["ADMIN", "USER", "VIEWER"] when action in [:list, :min_list]
+
   def create(conn, %{"token" => token, "description" => description} = params \\ %{}) do
-    # TODO: check tags type device
     Devices.get_by_token(token)
     |> case do
       nil ->
@@ -33,7 +35,7 @@ defmodule MediaServerWeb.DevicesController do
   def update(conn, %{"id" => id} = params) do
     case Devices.get_by_id(id) do
       nil ->
-        raise(BadRequestError, "Не правильный токен")
+        raise(BadRequestError, "Устройство не найдено")
 
       device ->
         Devices.update_device(device, %{
@@ -56,7 +58,7 @@ defmodule MediaServerWeb.DevicesController do
   def delete(conn, %{"id" => id} = params \\ %{}) do
     case Devices.get_by_id(id) do
       nil ->
-        raise(BadRequestError, "Не правильный токен")
+        raise(BadRequestError, "Устройство не найдено")
 
       device->
         Devices.delete_device(device)

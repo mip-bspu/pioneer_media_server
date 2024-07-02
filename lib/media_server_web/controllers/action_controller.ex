@@ -8,7 +8,8 @@ defmodule MediaServerWeb.ActionController do
   alias MediaServer.Util.FormatUtil
   alias MediaServer.Util.TimeUtil
 
-  plug MediaServerWeb.Plugs.Authentication, ["ADMIN", "USER"]
+  plug MediaServerWeb.Plugs.Authentication, ["ADMIN", "USER", "VIEWER"] when action in [:list, :list_from_period]
+  plug MediaServerWeb.Plugs.Authentication, ["ADMIN", "USER"] when action in [:create, :update, :delete, :update_files_data]
 
   def create(conn, params \\ %{}) do
     user = conn

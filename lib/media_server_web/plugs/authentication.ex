@@ -3,8 +3,6 @@ defmodule MediaServerWeb.Plugs.Authentication do
 
   alias MediaServer.Users
 
-  import Phoenix.Controller
-
   def init(opts), do: opts
 
   def call(conn, list_groups) do
@@ -38,7 +36,7 @@ defmodule MediaServerWeb.Plugs.Authentication do
   defp is_any_groups(user_groups, access_groups),
     do: length(user_groups -- access_groups) != length(user_groups)
 
-  defp check_session(conn, nil),
+  defp check_session(_conn, nil),
     do: raise(UnauthorizedError, "Не авторизован")
 
   defp check_session(conn, _), do: conn

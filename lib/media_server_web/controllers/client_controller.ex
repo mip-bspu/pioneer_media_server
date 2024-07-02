@@ -9,7 +9,7 @@ defmodule MediaServerWeb.ClientController do
   alias MediaServer.Util.RandomUtil
   alias MediaServer.Util.TimeUtil
 
-  plug MediaServerWeb.Plugs.CheckTokenClient, [] when action in [:schedule]
+  plug MediaServerWeb.Plugs.CheckTokenClient, [] when action in [:schedule, :content]
 
   @image_formats Application.compile_env(:media_server, :image_formats)
   @video_formats Application.compile_env(:media_server, :video_formats)
