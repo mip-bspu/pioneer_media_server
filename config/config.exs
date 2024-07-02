@@ -39,6 +39,11 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+config :media_server,
+  video_formats: [".mp4"],
+  image_formats: [".png", ".jpg", ".jpeg", ".webp"],
+  dist_content: "./files/"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

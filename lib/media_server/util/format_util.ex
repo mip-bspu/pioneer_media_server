@@ -1,10 +1,13 @@
 defmodule MediaServer.Util.FormatUtil do
-  def to_integer(int) when is_integer(int), do: int
 
-  def to_integer(int) do
-    case Integer.parse(int, 10) do
-      :error -> 0
-      {int, _} -> int
+  def to_integer(int, default \\ 0) do
+    if is_integer(int) do
+      int
+    else
+      case Integer.parse(int, 10) do
+        :error -> default
+        {int, _} -> int
+      end
     end
   end
 

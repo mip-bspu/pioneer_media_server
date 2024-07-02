@@ -11,5 +11,5 @@ defmodule NotFound do
 end
 
 defmodule InternalServerError do
-  defexception message: "Ошибка сервера", plag_status: 500
+  defexception message: "Ошибка сервера", plug_status: 500
 end

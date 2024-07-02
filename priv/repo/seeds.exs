@@ -44,6 +44,13 @@ user =
   })
   |> Repo.insert!()
 
+viewer =
+  %Users.Group{}
+  |> Users.Group.changeset(%{
+    name: "VIEWER"
+  })
+  |> Repo.insert!()
+
 if Mix.env() == :dev do
   %Users.User{}
   |> Users.User.changeset(%{
@@ -61,6 +68,16 @@ if Mix.env() == :dev do
     tags: Repo.all(Tags.Tag)
   })
   |> Repo.insert!()
+
+  %Users.User{}
+  |> Users.User.changeset(%{
+    login: "viewer",
+    password: "viewer",
+    groups: [viewer],
+    tags: Repo.all(Tags.Tag)
+  })
+  |> Repo.insert!()
+
 
   if Application.get_env(:media_server, :queue_parent) == nil do
     tag_office =

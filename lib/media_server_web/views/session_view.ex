@@ -6,9 +6,9 @@ defmodule MediaServerWeb.SessionView do
   def render("authentication.json", %{authenticate: user}),
     do: %{
       login: user.login,
-      tags: TagsView.normilize_tags(user.tags),
-      groups: normilize_groups(user.groups)
+      tags: TagsView.normalize_tags(user.tags),
+      groups: normalize_groups(user.groups)
     }
 
-  def normilize_groups(groups), do: groups |> Enum.map(& &1.name)
+  def normalize_groups(groups), do: groups |> Enum.map(& &1.name)
 end

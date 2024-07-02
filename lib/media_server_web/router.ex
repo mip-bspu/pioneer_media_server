@@ -15,26 +15,59 @@ defmodule MediaServerWeb.Router do
   scope "/admin", MediaServerWeb do
     pipe_through :api
 
-    post("/user", AdminController, :create)
+    post("/user", AdminController, :create_user)
     get("/users", AdminController, :list_users)
     post("/users/:id/active", AdminController, :set_active)
-    put("/users/:id", AdminController, :update)
+    put("/users/:id", AdminController, :update_user)
 
     get("/tags", TagsController, :list)
+    post("/tag", TagsController, :create)
+    delete("/tag/:id", TagsController, :delete)
     get("/groups", AdminController, :list_groups)
+  end
+
+  scope "/devices", MediaServerWeb do
+    pipe_through :api
+
+    get("/", DevicesController, :list)
+    get("/min", DevicesController, :min_list)
+    post("/", DevicesController, :create)
+    delete("/:id", DevicesController, :delete)
+    put("/:id", DevicesController, :update)
+  end
+
+  scope "/action", MediaServerWeb do
+    pipe_through :api
+
+    post("/", ActionController, :create)
+    put("/:uuid", ActionController, :update)
+    delete("/:uuid", ActionController, :delete)
+    put("/:uuid/files", ActionController, :update_files_data)
+
+    get("/", ActionController, :list)
+    get("/period", ActionController, :list_from_period)
+    get("/files/:action_uuid", FilesController, :list)
+  end
+
+  scope "/journal", MediaServerWeb do
+    pipe_through :api
+
+    get("/", JournalController, :list)
   end
 
   scope "/", MediaServerWeb do
     pipe_through :api
 
-    post("/action", ActionController, :create)
-    get("/action", ActionController, :list)
-    get("/action/period", ActionController, :list_from_period)
-    put("/action/:uuid", ActionController, :update)
-    delete("/action/:uuid", ActionController, :delete)
-    get("/action/files/:action_uuid", FilesController, :list)
-
+    get("/setup", ServerController, :setup)
     get("/files/:uuid/file", FilesController, :content)
+  end
+
+  scope "/client", MediaServerWeb do
+    pipe_through :api
+
+    get("/", ClientController, :initialize)
+    get("/schedule", ClientController, :schedule)
+    get("/content", ClientController, :content)
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

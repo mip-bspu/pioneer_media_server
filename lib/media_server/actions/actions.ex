@@ -93,11 +93,11 @@ defmodule MediaServer.Actions do
   end
 
   def delete_by_uuid!(uuid) do
-    action =
-      Repo.get_by(Actions.Action, uuid: uuid)
-      |> Repo.preload(:files)
+    action = get_by_uuid(uuid)
 
-    Files.delete_files!(action.files)
+    if action do
+      Files.delete_files!(action.files)
+    end
 
     action
     |> Repo.delete!()
@@ -111,7 +111,7 @@ defmodule MediaServer.Actions do
       uuid: params[:uuid] || Ecto.UUID.generate(),
       from: from,
       to: to,
-      priority: params[:priority] || 0,
+      priority: params[:priority] || 1,
       tags: params[:tags] && Tags.get_tags(params[:tags])
     })
     |> Repo.insert()
@@ -133,7 +133,7 @@ defmodule MediaServer.Actions do
       from: from || old_action.from,
       to: to || old_action.to,
       priority: priority || old_action.priority,
-      tags: (tags && tags |> Tags.get_tags()) || old_action.tags
+      tags: (tags && tags |> Tags.get_tags()) || []
     })
     |> Repo.update()
   end
@@ -160,7 +160,7 @@ defmodule MediaServer.Actions do
 
   def list_actions(tags, page, page_size) do
     {
-      get_total_actions(tags) |> Repo.one(),
+      get_total_actions(tags),
       get_page_actions(tags, page, page_size)
       |> Repo.all()
       |> Repo.preload(:tags)
@@ -176,9 +176,28 @@ defmodule MediaServer.Actions do
     |> Repo.preload(:files)
   end
 
+  def list_actions_before_data_with_emergency_priority(list_tags, date) do
+    query_actions_by_tags(list_tags)
+    |> where([a], a.to > ^date)
+    |> where([a], a.priority == 4)
+    |> Repo.all()
+    |> Repo.preload(:files)
+    |> Repo.preload(:tags)
+  end
+
+  def list_actions_before_date(list_tags, date) do
+    query_actions_by_tags(list_tags)
+    |> where([q], q.to > ^date)
+    |> Repo.all()
+    |> Repo.preload(:files)
+    |> Repo.preload(:tags)
+  end
+
   defp get_total_actions(list_tags) do
     query_actions_by_tags(list_tags)
-    |> select([a], count(a.uuid))
+    |> select([a], [a.uuid, a.id])
+    |> Repo.all()
+    |> length
   end
 
   defp get_page_actions(tags, page, page_size) do
@@ -190,7 +209,14 @@ defmodule MediaServer.Actions do
   defp query_actions_by_tags(list_tags) do
     from(a in Actions.Action,
       left_join: t in assoc(a, :tags),
-      where: t.name in ^list_tags or is_nil(t.name)
+      group_by: [a.id],
+      having: fragment("? @> array_agg(?) or array_agg(?)::text[] = ARRAY[NULL]", ^[nil | list_tags], t.name, t.name)
     )
+
+    # from(a in Actions.Action,
+    #    distinct: true,
+    #    left_join: t in assoc(a, :tags),
+    #    where: t.name in ^list_tags or is_nil(t.name)
+    # )
   end
 end

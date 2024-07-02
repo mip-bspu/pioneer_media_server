@@ -2,7 +2,6 @@ defmodule MediaServerWeb.Plugs.Authentication do
   import Plug.Conn
 
   alias MediaServer.Users
-  alias MediaServerWeb.ErrorView
 
   import Phoenix.Controller
 
@@ -24,27 +23,23 @@ defmodule MediaServerWeb.Plugs.Authentication do
   defp check_access_group(conn, user_id, access_groups) do
     case Users.get_by_id(user_id) do
       nil ->
-        error_unauthorized(conn)
+        raise(UnauthorizedError, "Не авторизован")
 
       user ->
         user_groups = Enum.map(user.groups, & &1.name)
 
-        if(is_any_groups(user_groups, access_groups), do: conn, else: error_unauthorized(conn))
+        if(is_any_groups(user_groups, access_groups),
+          do: conn,
+          else: raise(UnauthorizedError, "Не авторизован")
+        )
     end
   end
 
   defp is_any_groups(user_groups, access_groups),
     do: length(user_groups -- access_groups) != length(user_groups)
 
-  defp error_unauthorized(conn), do: check_session(conn, nil)
-
   defp check_session(conn, nil),
-    do:
-      conn
-      |> put_status(401)
-      |> put_view(ErrorView)
-      |> render("unauthorized.json", %{message: "Не авторизован"})
-      |> halt()
+    do: raise(UnauthorizedError, "Не авторизован")
 
   defp check_session(conn, _), do: conn
 end

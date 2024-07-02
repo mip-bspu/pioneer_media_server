@@ -4,12 +4,15 @@ defmodule MediaServer.Files do
   alias MediaServer.Repo
   alias MediaServer.Files
   alias MediaServer.Actions
+  alias MediaServer.Util.FormatUtil
 
   import Ecto.Query
 
   @dist_files Application.compile_env(:media_server, :dist_content, "./files/")
   @chunk_size Application.compile_env(:media_server, :chunk_size, 2000)
 
+  @image_formats Application.compile_env(:media_server, :image_formats)
+  @video_formats Application.compile_env(:media_server, :video_formats)
 
   def get_files_by_action_uuid(uuid) do
     from(
@@ -33,24 +36,39 @@ defmodule MediaServer.Files do
       check_sum: data[:check_sum] || nil,
       extention: data[:extention],
       name: data[:name],
-      action_id: data[:action_id]
+      action_id: data[:action_id],
+      timelive_image: data[:time] || nil
     })
     |> Repo.insert!()
   end
 
-  def update_file_data!(%Files.File{} = old_file_data, new_file_data) do
-    old_file_data
-    |> Files.File.changeset(new_file_data)
+  def update_file_data!(%Files.File{} = old, new) do
+    old
+    |> Files.File.changeset(new)
     |> Repo.update!()
   end
 
-  def add_file!(%Plug.Upload{} = upload, action_id) do
+  def update_files!(action, %{ times: times }) do
+    action.files
+    |> Enum.each(fn file ->
+      entry = Enum.find(times, &(&1.uuid == file.uuid))
+
+      if not is_nil(entry) do
+        update_file_data!(file, %{
+          timelive_image:  entry.time |> FormatUtil.to_integer()
+        })
+      end
+    end)
+  end
+
+  def add_file!(%Plug.Upload{} = upload, action_id, time \\ 10) do
     Repo.transaction(fn ->
       file =
         %{
           name: upload.filename |> String.split(".") |> Enum.fetch!(0),
           extention: Path.extname(upload.filename),
-          action_id: action_id
+          action_id: action_id,
+          time: if(upload.content_type |> String.contains?("image"), do: time, else: nil)
         }
         |> add_file_data!()
 
@@ -62,6 +80,28 @@ defmodule MediaServer.Files do
     end)
   end
 
+  def add_files!(action, files, times \\ nil) do
+    Enum.each(files || [], fn file ->
+      ext = Path.extname(file.filename)
+
+      if ext in @image_formats || ext in @video_formats do
+
+        if is_list(times) do
+          time = times
+            |> Enum.find(fn(t)->file.filename == hd t end)
+            |> case do
+              nil -> nil
+              time -> time |> Enum.at(1) |> FormatUtil.to_integer()
+            end
+
+          Files.add_file!(file, action.id, time)
+        else
+          Files.add_file!(file, action.id)
+        end
+      end
+    end)
+  end
+
   def delete_file!(%{uuid: uuid, extention: ext} = _file) do
     Repo.get_by(Files.File, uuid: uuid)
     |> Repo.delete!()
@@ -69,6 +109,18 @@ defmodule MediaServer.Files do
     if File.exists?(file_path(uuid, ext)) do
       File.rm!(file_path(uuid, ext))
     end
+  end
+
+  def delete_files!(action, uuids) do
+    action = action |> Repo.preload(:files)
+
+    uuids |> Enum.each(fn uuid ->
+      action_file = Enum.find( action.files, &(&1.uuid == uuid) )
+
+      if not is_nil(action_file) do
+        delete_file!(action_file)
+      end
+    end)
   end
 
   def delete_files!([]), do: :ok
