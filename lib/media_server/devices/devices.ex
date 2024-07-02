@@ -26,7 +26,8 @@ defmodule MediaServer.Devices do
     from( d in Devices.Device,
       left_join: t in assoc(d, :tags),
       where: fragment("? in (?) or ? IS NULL", t.name, splice(^tags), t.name),
-      distinct: true
+      distinct: true,
+      order_by: [asc: d.description, desc: d.last_active]
     ) |> Repo.all()
   end
 
