@@ -10,7 +10,8 @@ defmodule MediaServer.Tags do
 
   def get_tag_by_id(id), do: Repo.get_by(Tags.Tag, id: id)
 
-  def get_all_tags(), do: get_filtered_tags()
+  def get_all_tags(), do: from(t in Tags.Tag) |> Repo.all()
+
   def get_all_my_tags() do
     from(t in Tags.Tag, where: is_nil(t.owner))
     |> Repo.all()
@@ -26,6 +27,7 @@ defmodule MediaServer.Tags do
     list_types = Access.get(filter, :list_types, :none)
 
     query = from(t in Tags.Tag)
+      |> where([t], not (t.type == "node" and is_nil(t.owner)) )
 
     query =
       if list_tags != :none,

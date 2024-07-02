@@ -19,6 +19,12 @@ defmodule MediaServerWeb.TagsController do
     |> render("tags.json", %{tags: tags})
   end
 
+  def list_all(conn, params) do
+    conn
+    |> put_status(200)
+    |> render("tags.json", %{tags: Tags.get_all_tags()})
+  end
+
   def create(conn, %{"name" => name, "type" => type} = _params) do
     case Tags.get_tag_by_name(name) do
       nil ->
