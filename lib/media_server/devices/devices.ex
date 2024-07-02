@@ -35,7 +35,6 @@ defmodule MediaServer.Devices do
     else
       user
       |> Users.get_tags_of_user_by_type("device")
-      |> IO.inspect()
     end
     |> Stream.map(&(&1.name))
     |> Enum.to_list()

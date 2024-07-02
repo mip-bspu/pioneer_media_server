@@ -3,6 +3,7 @@ defmodule MediaServer.Tags do
 
   alias MediaServer.Repo
   alias MediaServer.Tags
+  alias MediaServer.Users
 
   import Ecto.Query
 
@@ -66,5 +67,23 @@ defmodule MediaServer.Tags do
       })
       |> Repo.insert()
     end)
+  end
+
+  def check_correct_tags(%Users.User{} = user, tags) do
+    if is_list(tags) do
+      incorrect_tags =
+        if(Users.is_admin(user),
+          do: tags -- ( get_filtered_tags() |> Enum.map(&(&1.name)) ),
+          else: tags -- Enum.map(user.tags, &(&1.name))
+        )
+
+      if length(incorrect_tags) > 0 do
+        raise( BadRequestError, "Назначены недопустимые тэги: #{Enum.join(incorrect_tags, ", ")}" )
+      end
+
+      tags
+    else
+      []
+    end
   end
 end
