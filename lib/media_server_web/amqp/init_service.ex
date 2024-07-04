@@ -20,6 +20,12 @@ defmodule MediaServerWeb.AMQP.InitService do
     {:ok, :state}
   end
 
+  def update_tags_in_parent() do
+    if not is_nil(@parent) && not is_nil(GenServer.whereis(@name)) do
+      send(@name, {:init_in_parent, @parent})
+    end
+  end
+
   def handle_info({:init_in_parent, parent}, state) do
     spawn(fn -> init_in_parent(parent) end)
 
@@ -31,7 +37,7 @@ defmodule MediaServerWeb.AMQP.InitService do
       case RpcClient.init_in_parent(
              parent,
              @my_queue_tag,
-             Tags.get_all_my_tags()
+             Tags.get_all_my_tags() |> Tags.normalize_tags()
            ) do
         {:ok, "ok"} ->
           Logger.debug("#{@name}: initialized in #{parent}")

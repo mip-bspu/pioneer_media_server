@@ -18,6 +18,11 @@ defmodule MediaServer.Tags do
     |> Repo.all()
   end
 
+  def get_tags_by_owner(owner) do
+    from(t in Tags.Tag, where: t.owner == ^owner)
+    |> Repo.all()
+  end
+
   def get_tags(list_tags) do
     from(t in Tags.Tag, where: t.name in ^list_tags)
     |> Repo.all()
@@ -57,15 +62,21 @@ defmodule MediaServer.Tags do
   def delete_tag!(%Tags.Tag{} = tag),
     do: tag |> Repo.delete!()
 
-  def add_tags(owner, tags) do
-    Enum.each(tags, fn tag ->
+  def add_tags!(child, tags) do
+    old_tags = get_tags_by_owner(child) |> normalize_tags()
+
+    remove_tags = old_tags -- tags
+    add_tags = tags -- old_tags
+
+    Enum.each(remove_tags, fn tag ->
+      get_tag_by_name(tag.name)
+      |> Repo.delete!()
+    end)
+
+    Enum.each(add_tags, fn tag ->
       %Tags.Tag{}
-      |> Tags.Tag.changeset(%{
-        name: tag[:name],
-        owner: owner,
-        type: tag[:type] || "node"
-      })
-      |> Repo.insert()
+      |> Tags.Tag.changeset(tag)
+      |> Repo.insert!()
     end)
   end
 
@@ -85,5 +96,13 @@ defmodule MediaServer.Tags do
     else
       []
     end
+  end
+
+  def normalize_tags(tags) do
+    tags |> Enum.map(fn t -> %{
+      name: t.name,
+      owner: t.owner,
+      type: t.type
+    } end)
   end
 end

@@ -2,6 +2,7 @@ defmodule MediaServerWeb.TagsController do
   use MediaServerWeb, :controller
 
   alias MediaServer.Tags
+  alias MediaServerWeb.AMQP.InitService
 
   plug MediaServerWeb.Plugs.Authentication, ["ADMIN"] when action in [:list_all, :create, :delete]
   plug MediaServerWeb.Plugs.Authentication, ["ADMIN", "USER"] when action in [:list]
@@ -32,6 +33,8 @@ defmodule MediaServerWeb.TagsController do
         Tags.create_tag(%{name: name, type: type})
         |> case do
           {:ok, tag} ->
+            InitService.update_tags_in_parent()
+
             conn
             |> put_status(200)
             |> render("tag.json", %{tag: tag})
@@ -54,6 +57,7 @@ defmodule MediaServerWeb.TagsController do
 
       tag ->
         Tags.delete_tag!(tag)
+        InitService.update_tags_in_parent()
 
         conn
         |> send_resp(:ok, "ok")
