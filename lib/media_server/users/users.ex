@@ -27,7 +27,7 @@ defmodule MediaServer.Users do
       login: changeset[:login],
       password: changeset[:password],
       tags: tags,
-      groups: if(is_list(groups) && length(groups) > 0, do: groups, else: Tags.get_tags(["USER"]))
+      groups: if(is_list(groups) && length(groups) > 0, do: groups, else: Admin.get_groups(["USER"]))
     })
     |> Repo.insert()
   end
