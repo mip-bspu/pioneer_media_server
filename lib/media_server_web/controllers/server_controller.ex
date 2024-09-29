@@ -3,7 +3,7 @@ defmodule MediaServerWeb.ServerController do
 
   alias MediaServer.Server
 
-  plug MediaServerWeb.Plugs.Authentication, ["ADMIN", "USER", "VIEWER"]
+  # plug MediaServerWeb.Plugs.Authentication, ["ADMIN", "USER", "VIEWER"]
 
   def setup(conn, _params) do
     conn

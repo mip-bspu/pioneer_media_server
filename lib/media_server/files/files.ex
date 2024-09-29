@@ -54,9 +54,12 @@ defmodule MediaServer.Files do
       entry = Enum.find(times, &(&1.uuid == file.uuid))
 
       if not is_nil(entry) do
-        update_file_data!(file, %{
-          timelive_image:  entry.time |> FormatUtil.to_integer()
-        })
+        time = if(entry.time <= 0,
+            do: 10,
+            else: entry.time |> FormatUtil.to_integer()
+          )
+
+        update_file_data!(file, %{ timelive_image: time })
       end
     end)
   end
@@ -94,7 +97,9 @@ defmodule MediaServer.Files do
               time -> time |> Enum.at(1) |> FormatUtil.to_integer()
             end
 
-          Files.add_file!(file, action.id, time)
+          if time > 0 do
+            Files.add_file!(file, action.id, time)
+          end
         else
           Files.add_file!(file, action.id)
         end
