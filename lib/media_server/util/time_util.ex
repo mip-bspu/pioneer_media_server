@@ -27,4 +27,8 @@ defmodule MediaServer.Util.TimeUtil do
     Timex.parse!(date, format)
     |> Timex.to_date()
   end
+
+  def get_date_shift_days(days) do
+    Timex.now() |> Timex.to_date() |> Date.add(days)
+  end
 end

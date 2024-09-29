@@ -49,4 +49,9 @@ defmodule MediaServer.Journal do
 
     {journal, count}
   end
+
+  def delete_rows_before_date(date) do
+    from(j in Journal, where: fragment("?::DATE < ?", j.inserted_at, ^date))
+    |> Repo.delete_all()
+  end
 end
