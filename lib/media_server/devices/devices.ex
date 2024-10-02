@@ -21,12 +21,10 @@ defmodule MediaServer.Devices do
   end
 
   def get_devices_by_tags(tags) do
-    tags = [nil | tags]
-
     from( d in Devices.Device,
       left_join: t in assoc(d, :tags),
-      where: fragment("? in (?) or ? IS NULL", t.name, splice(^tags), t.name),
-      distinct: true,
+      group_by: [d.id],
+      having: fragment("? @> array_agg(?) or array_agg(?)::text[] = ARRAY[NULL]", ^[nil | tags], t.name, t.name),
       order_by: [asc: d.description, desc: d.last_active]
     ) |> Repo.all()
   end

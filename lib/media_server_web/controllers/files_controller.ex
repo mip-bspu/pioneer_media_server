@@ -3,6 +3,8 @@ defmodule MediaServerWeb.FilesController do
 
   alias MediaServer.Files
 
+  plug MediaServerWeb.Plugs.Authentication, ["ADMIN", "USER", "VIEWER"]
+
   def list(conn, %{"action_uuid" => uuid} = _params) do
     conn
     |> render("files.json", %{

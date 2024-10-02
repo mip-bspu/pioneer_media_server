@@ -21,7 +21,8 @@ defmodule MediaServer.Application do
       MediaServerWeb.Rpc.RpcClient,
       MediaServerWeb.Rpc.RpcServer,
       # MediaServerWeb.AMQP.PingListener,
-      MediaServerWeb.AMQP.FilesSyncListener
+      MediaServerWeb.AMQP.FilesSyncListener,
+      MediaServer.Workers.JournalWorker
     ]
 
     children =

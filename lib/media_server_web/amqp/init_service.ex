@@ -17,8 +17,24 @@ defmodule MediaServerWeb.AMQP.InitService do
     Logger.info("#{@name}: starting init service in #{@parent}")
 
     send(@name, {:init_in_parent, @parent})
-    {:ok, :state}
+    {:ok, :init}
   end
+
+  def update_tags_in_parent() do
+    if not is_nil(@parent) && not is_nil(GenServer.whereis(@name)) do
+      if get_state() == :none do
+        send(@name, {:init_in_parent, @parent})
+        set_state(:init)
+      end
+    end
+  end
+
+  def get_state(), do: GenServer.call(@name, {:get_state})
+  def set_state(state), do: GenServer.cast(@name, {:set_state, state})
+
+  def handle_call({:get_state}, state), do: state
+  def handle_cast({:set_state, state}, _), do: {:noreply, state}
+
 
   def handle_info({:init_in_parent, parent}, state) do
     spawn(fn -> init_in_parent(parent) end)
@@ -31,10 +47,11 @@ defmodule MediaServerWeb.AMQP.InitService do
       case RpcClient.init_in_parent(
              parent,
              @my_queue_tag,
-             Tags.get_all_my_tags()
+             Tags.get_all_my_tags() |> Tags.normalize_tags(@my_queue_tag)
            ) do
         {:ok, "ok"} ->
           Logger.debug("#{@name}: initialized in #{parent}")
+          set_state(:none)
 
         error ->
           Logger.warning("#{@name}: Error initialization in #{parent}, reason: #{inspect(error)}")

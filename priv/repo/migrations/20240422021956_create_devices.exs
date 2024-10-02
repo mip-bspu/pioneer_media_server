@@ -10,7 +10,7 @@ defmodule MediaServer.Repo.Migrations.CreateDevices do
 
     create table("device_tags") do
       add(:device_id, references(:devices, on_delete: :delete_all))
-      add(:tag_id, references(:tags))
+      add(:tag_id, references(:tags, on_delete: :delete_all))
     end
   end
 end

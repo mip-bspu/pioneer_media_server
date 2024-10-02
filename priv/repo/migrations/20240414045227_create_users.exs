@@ -16,7 +16,7 @@ defmodule MediaServer.Repo.Migrations.CreateUsers do
 
     create table("user_tags") do
       add(:user_id, references(:users, on_delete: :delete_all))
-      add(:tag_id, references(:tags))
+      add(:tag_id, references(:tags, on_delete: :delete_all))
     end
 
     create table("user_groups") do

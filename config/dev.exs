@@ -70,10 +70,13 @@ config :media_server,
   queue_parent: nil,
   initial_tags: ["city", "blg"]
 
-config :media_server,
-  dist_content: "./files/"
+config :media_server, # sync_files
+  dist_content: "./files/",
+  interval_sync_check: 10 * 1000,
+  chunk_size: 2000
 
-# interval_sync_check: 10 * 1000,
-# chunk_size: 2000
+config :media_server, # journal
+  interval_clear_journal: 3 * 60 * 1000,
+  days_for_storage: 60
 
 config :pioneer_rpc, connection_string: "amqp://guest:guest@localhost:5672"

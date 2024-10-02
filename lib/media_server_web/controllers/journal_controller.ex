@@ -6,6 +6,8 @@ defmodule MediaServerWeb.JournalController do
   alias MediaServer.Journal
   alias MediaServer.Util.FormatUtil
 
+  plug MediaServerWeb.Plugs.Authentication, ["ADMIN", "USER", "VIEWER"]
+
   def list(conn, params) do
     user_id = conn
       |> fetch_session()

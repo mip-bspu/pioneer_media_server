@@ -4,29 +4,27 @@ defmodule MediaServerWeb.ActionController do
   alias MediaServer.Actions
   alias MediaServer.Files
   alias MediaServer.Users
+  alias MediaServer.Tags
   alias MediaServer.Util.FormatUtil
   alias MediaServer.Util.TimeUtil
 
+  plug MediaServerWeb.Plugs.Authentication, ["ADMIN", "USER", "VIEWER"] when action in [:list, :list_from_period]
+  plug MediaServerWeb.Plugs.Authentication, ["ADMIN", "USER"] when action in [:create, :update, :delete, :update_files_data]
+
   def create(conn, params \\ %{}) do
-    if is_list(params["tags"]) do
-      user = conn
-          |> fetch_session()
-          |> get_session(:user_id)
-          |> Users.get_by_id()
+    user = conn
+      |> fetch_session()
+      |> get_session(:user_id)
+      |> Users.get_by_id()
 
-      tags = params["tags"] -- Enum.map(user.tags, &(&1.name))
-
-      if length(tags) > 0 do
-        raise( BadRequestError, "Не допустимые тэги" )
-      end
-    end
+    tags = Tags.check_correct_tags(user, params["tags"])
 
     Actions.add_action(%{
       name: params["name"],
       from: params["from"] |> TimeUtil.parse_date(),
       to: params["to"] |> TimeUtil.parse_date(),
       priority: params["priority"] |> FormatUtil.to_integer(1),
-      tags: params["tags"]
+      tags: tags
     })
     |> case do
       {:ok, action} ->
@@ -47,6 +45,13 @@ defmodule MediaServerWeb.ActionController do
   end
 
   def update(conn, %{"uuid" => uuid} = params) do
+    user = conn
+      |> fetch_session()
+      |> get_session(:user_id)
+      |> Users.get_by_id()
+
+    tags = Tags.check_correct_tags(user, params["tags"])
+
     uuid
     |> Actions.get_by_uuid()
     |> if_exists()
@@ -55,7 +60,7 @@ defmodule MediaServerWeb.ActionController do
       from: params["from"],
       to: params["to"],
       priority: params["priority"] && params["priority"] |> FormatUtil.to_integer(1),
-      tags: params["tags"]
+      tags: tags
     })
     |> case do
       {:ok, action} ->
