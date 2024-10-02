@@ -22,7 +22,7 @@ defmodule MediaServer.Repo.Migrations.CreateActions do
 
     create table("action_tags") do
       add(:action_id, references(:actions, on_delete: :delete_all))
-      add(:tag_id, references(:tags))
+      add(:tag_id, references(:tags), on_delete: :delete_all)
     end
   end
 end

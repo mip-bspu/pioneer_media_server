@@ -98,10 +98,10 @@ defmodule MediaServer.Tags do
     end
   end
 
-  def normalize_tags(tags) do
+  def normalize_tags(tags, owner \\ nil) do
     tags |> Enum.map(fn t -> %{
       name: t.name,
-      owner: t.owner,
+      owner: owner || t.owner,
       type: t.type
     } end)
   end

@@ -80,15 +80,6 @@ if Mix.env() == :dev do
 
 
   if Application.get_env(:media_server, :queue_parent) == nil do
-    tag_office =
-      %Tags.Tag{}
-      |> Tags.Tag.changeset(%{
-        name: "office",
-        owner: nil,
-        type: "device"
-      })
-      |> Repo.insert!()
-
     tag_city = Repo.get_by(Tags.Tag, name: "city")
     tag_blg = Repo.get_by(Tags.Tag, name: "blg")
 
