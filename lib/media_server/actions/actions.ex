@@ -23,8 +23,8 @@ defmodule MediaServer.Actions do
       group by a.id, a.uuid, a.name, priority, date_create, a.from, a.to
       order by date_create, a.uuid
     ), data_files as (
-      select action_id, string_agg(concat(f.name, check_sum),'.') as data_file
-      from (select f.name, check_sum, action_id from files f order by f.name, check_sum) f
+      select action_id, string_agg(concat(f.name, check_sum, timelive_image),'.') as data_file
+      from (select f.name, check_sum, action_id, timelive_image from files f order by f.name, check_sum) f
       group by action_id
     ), action_with_arr_tags_and_hash_content as (
       select a.id, a.uuid, a.name, priority, date_create, a.from, a.to, tags,

@@ -37,7 +37,7 @@ defmodule MediaServer.Files do
       extention: data[:extention],
       name: data[:name],
       action_id: data[:action_id],
-      timelive_image: data[:time] || nil
+      timelive_image: data[:timelive_image] || nil
     })
     |> Repo.insert!()
   end
@@ -71,7 +71,7 @@ defmodule MediaServer.Files do
           name: upload.filename |> String.split(".") |> Enum.fetch!(0),
           extention: Path.extname(upload.filename),
           action_id: action_id,
-          time: if(upload.content_type |> String.contains?("image"), do: time, else: nil)
+          timelive_image: if(upload.content_type |> String.contains?("image"), do: time, else: nil)
         }
         |> add_file_data!()
 
@@ -93,7 +93,7 @@ defmodule MediaServer.Files do
           time = times
             |> Enum.find(fn(t)->file.filename == hd t end)
             |> case do
-              nil -> nil
+              nil -> 10
               time -> time |> Enum.at(1) |> FormatUtil.to_integer()
             end
 
@@ -101,7 +101,7 @@ defmodule MediaServer.Files do
             Files.add_file!(file, action.id, time)
           end
         else
-          Files.add_file!(file, action.id)
+          Files.add_file!(file, action.id, 10)
         end
       end
     end)
@@ -236,7 +236,8 @@ defmodule MediaServer.Files do
         uuid: file.uuid,
         extention: file.extention,
         check_sum: file.check_sum,
-        name: file.name
+        name: file.name,
+        timelive_image: file.timelive_image
       }
       | list_norm_files
     ])
