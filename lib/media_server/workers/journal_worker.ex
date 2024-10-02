@@ -7,8 +7,8 @@ defmodule MediaServer.Workers.JournalWorker do
 
   @name __MODULE__
 
-  @interval_clear_journal 3 * 60 * 1000
-  @days_for_storage 60
+  @interval_clear_journal Application.compile_env(:media_server, :interval_clear_journal)
+  @days_for_storage Application.compile_env(:media_server, :days_for_storage)
 
   def start_link(state), do: GenServer.start_link(@name, state, name: @name)
 

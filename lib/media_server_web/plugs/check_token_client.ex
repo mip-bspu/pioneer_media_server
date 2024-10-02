@@ -1,6 +1,5 @@
 defmodule MediaServerWeb.Plugs.CheckTokenClient do
   import Plug.Conn
-  import Phoenix.Controller
 
   alias MediaServer.Devices
 
