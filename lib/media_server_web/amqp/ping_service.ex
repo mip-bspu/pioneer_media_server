@@ -5,7 +5,7 @@ defmodule MediaServerWeb.AMQP.PingService do
   alias MediaServerWeb.Rpc.RpcClient
 
   @name __MODULE__
-  @parent Application.compile_env(:media_server, :queue_parent)
+  @parent Application.get_env(:media_server, :queue_parent)
 
   @interval_ping 2000
 

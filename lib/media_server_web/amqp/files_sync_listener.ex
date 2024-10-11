@@ -11,7 +11,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
   @reconnect_interval 10000
 
   @name __MODULE__
-  @connection_string Application.compile_env(:pioneer_rpc, :connection_string)
+  @connection_string Application.get_env(:pioneer_rpc, :connection_string)
 
   @queues Enum.map(
             [
@@ -22,7 +22,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncListener do
               "request_file_download",
               "load_chunk"
             ],
-            &"#{Application.compile_env(:media_server, :queue_tag)}.#{&1}"
+            &"#{Application.get_env(:media_server, :queue_tag)}.#{&1}"
           )
 
   def start_link(_state \\ []) do

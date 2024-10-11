@@ -6,7 +6,7 @@ defmodule MediaServerWeb.AMQP.FilesSyncDownloader do
   alias MediaServer.Files
 
   @name __MODULE__
-  @my_tag Application.compile_env(:media_server, :queue_tag)
+  @my_tag Application.get_env(:media_server, :queue_tag)
 
   def start_link(state), do: GenServer.start_link(@name, state, name: @name)
 

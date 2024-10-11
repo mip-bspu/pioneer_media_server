@@ -11,9 +11,9 @@ defmodule MediaServerWeb.AMQP.FilesSyncService do
   alias MediaServer.Util.FormatUtil
 
   @name __MODULE__
-  @check_interval Application.compile_env(:media_server, :interval_sync_check)
+  @check_interval Application.get_env(:media_server, :interval_sync_check)
 
-  @parent Application.compile_env(:media_server, :queue_parent)
+  @parent Application.get_env(:media_server, :queue_parent)
 
   def start_link(_state \\ []) do
     GenServer.start_link(@name, [], name: @name)

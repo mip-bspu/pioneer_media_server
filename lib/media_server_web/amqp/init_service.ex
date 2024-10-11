@@ -8,8 +8,8 @@ defmodule MediaServerWeb.AMQP.InitService do
   @interval_init 3000
 
   @name __MODULE__
-  @my_queue_tag Application.compile_env(:media_server, :queue_tag)
-  @parent Application.compile_env(:media_server, :queue_parent, nil)
+  @my_queue_tag Application.get_env(:media_server, :queue_tag)
+  @parent Application.get_env(:media_server, :queue_parent, nil)
 
   def start_link(_state), do: GenServer.start_link(@name, [], name: @name)
 

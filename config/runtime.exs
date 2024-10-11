@@ -16,6 +16,9 @@ import Config
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
+alias MediaServer.Util.FormatUtil
+
+
 if System.get_env("PHX_SERVER") do
   config :media_server, MediaServerWeb.Endpoint, server: true
 end
@@ -80,9 +83,11 @@ if config_env() == :prod do
         enviroment variable SERVER_NAME is missing
       """
 
-  parent_server_name = System.get_env("PARENT_SERVER_NAME") || nil
-  interval_sync = System.get_env("INTERVAL_SYNC_CHECK") || 10 * 1000
-  chunk_size = System.get_env("CHUNK_SIZE") || 2000
+  parent_server_name = System.get_env("PARENT_SERVER_NAME")
+  parent_server_name = if(is_nil(parent_server_name) || parent_server_name == "", do: nil, else: parent_server_name)
+
+  interval_sync = FormatUtil.to_integer(System.get_env("INTERVAL_SYNC_CHECK") || 10 * 1000)
+  chunk_size = FormatUtil.to_integer(System.get_env("CHUNK_SIZE") || 2000)
 
   config :media_server,
     queue_tag: server_name,

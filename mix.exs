@@ -63,6 +63,8 @@ defmodule MediaServer.MixProject do
       setup: ["deps.get", "ecto.setup"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
+      "ecto.setup.prod": ["ecto.create", "ecto.migrate", "seeds.prod"],
+      "seeds.prod": ["run priv/repo/seeds.exs prod"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
     ]
   end

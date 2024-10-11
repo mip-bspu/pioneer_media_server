@@ -8,8 +8,8 @@ defmodule MediaServer.Files do
 
   import Ecto.Query
 
-  @dist_files Application.compile_env(:media_server, :dist_content, "./files/")
-  @chunk_size Application.compile_env(:media_server, :chunk_size, 2000)
+  @dist_files Application.get_env(:media_server, :dist_content)
+  @chunk_size Application.get_env(:media_server, :chunk_size)
 
   @image_formats Application.compile_env(:media_server, :image_formats)
   @video_formats Application.compile_env(:media_server, :video_formats)
