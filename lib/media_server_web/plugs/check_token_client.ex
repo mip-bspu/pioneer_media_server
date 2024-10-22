@@ -7,14 +7,14 @@ defmodule MediaServerWeb.Plugs.CheckTokenClient do
 
   def call(conn, _opts) do
     token = conn
-    |> get_req_header("pioneer-token")
-    |> get_token()
+      |> get_req_header("pioneer-token")
+      |> get_token()
 
     if !is_nil(token) do
       conn
       |> check_device(Devices.get_by_token(token), token)
     else
-      raise(UnauthorizedError, "Не верный токен")
+      raise(UnauthorizedError, "Неверный токен")
     end
   end
 
@@ -23,7 +23,7 @@ defmodule MediaServerWeb.Plugs.CheckTokenClient do
 
   defp check_device(conn, device, token) do
     if is_nil(device) do
-      raise(UnauthorizedError, "Не верный токен")
+      raise(UnauthorizedError, "Неверный токен")
     end
 
     conn

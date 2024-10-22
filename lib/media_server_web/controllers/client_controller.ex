@@ -9,22 +9,14 @@ defmodule MediaServerWeb.ClientController do
   alias MediaServer.Util.RandomUtil
   alias MediaServer.Util.TimeUtil
 
-  plug MediaServerWeb.Plugs.CheckTokenClient, [] when action in [:schedule]
+  plug MediaServerWeb.Plugs.CheckTokenClient, [] when action in [:schedule, :initialize]
 
   @image_formats Application.compile_env(:media_server, :image_formats)
   @video_formats Application.compile_env(:media_server, :video_formats)
 
-  def initialize(conn, %{ "token" => token } = _params) do
-    Devices.get_by_token(token)
-    |> case do
-      nil ->
-        raise(UnauthorizedError, "Неверный токен")
-
-      _device ->
-        conn
-        |> send_resp(:ok, "ok")
-
-    end
+  def initialize(conn, _params) do
+    conn
+    |> send_resp(:ok, "ok")
   end
 
   def schedule(conn, %{ "to" => date } = params) do
@@ -122,5 +114,5 @@ defmodule MediaServerWeb.ClientController do
   end
 
   def content(_conn, _params), do:
-    raise(NotFound, "Не допустимый формат контента")
+    raise(NotFound, "Недопустимый формат контента")
 end
